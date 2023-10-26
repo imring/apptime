@@ -1,12 +1,10 @@
-#include <chrono>
 #include <iostream>
-#include <algorithm>
-#include <filesystem>
 
-#include <Windows.h>
-
-#include "process.hpp"
+#include "process.h"
 #include "database.hpp"
+#include "monitoring.hpp"
+
+using namespace std::chrono_literals;
 
 std::vector<apptime::process> processes() {
     std::vector<apptime::process> result = apptime::process::active_windows();
@@ -54,9 +52,22 @@ void database_test() {
     }
 }
 
+void monitoring_test() {
+    apptime::database db{"./result.db"};
+    db.add_ignore(apptime::ignore_file, "C:/Windows/explorer.exe");
+    db.add_ignore(apptime::ignore_path, "C:/Windows/System32");
+
+    apptime::monitoring m{db};
+    m.start();
+
+    std::this_thread::sleep_for(5s);
+    m.stop();
+}
+
 int main() {
-    process_test();
-    database_test();
+    // process_test();
+    // database_test();
+    monitoring_test();
 
     return 0;
 }

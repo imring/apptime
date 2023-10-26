@@ -1,6 +1,7 @@
 add_executable(apptime
     database.cpp
     main.cpp
+    monitoring.cpp
 )
 if (WIN32)
     target_sources(apptime PRIVATE process_win32.cpp)
