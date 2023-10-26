@@ -47,7 +47,7 @@ int get_pid(HWND hwnd) {
 HWND get_hwnd(int pid) {
     HWND                              result = NULL;
     std::function<BOOL(HWND, LPARAM)> cb     = [&result, pid](HWND hwnd, LPARAM lParam) -> BOOL {
-        int process_id = get_pid(hwnd);
+        const int process_id = get_pid(hwnd);
         if (process_id != -1 && process_id == pid) {
             result = hwnd;
             return FALSE; // stop searching
@@ -60,23 +60,25 @@ HWND get_hwnd(int pid) {
 
 namespace apptime {
 bool process::exist() const {
-    HANDLE         handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
+    const HANDLE   handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
     handle_deleter hd{handle};
     return handle != NULL;
 }
 
 std::string process::window_name() const {
-    HWND hwnd = get_hwnd(process_id_);
+    const HWND hwnd = get_hwnd(process_id_);
     if (hwnd == NULL) {
         return {};
     }
 
-    const LRESULT length = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
-    if (length <= 0) {
+    // nvcontainer.exe doesn't allow SendMessage to be used, so a timer is set
+    constexpr unsigned timeout = 100;
+    DWORD_PTR          length;
+    if (!SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK, timeout, &length) || length <= 0) {
         return {};
     }
     std::string result(length + 1, '\0');
-    if (SendMessage(hwnd, WM_GETTEXT, length + 1, std::bit_cast<LPARAM>(result.data())) != length) {
+    if (!SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, std::bit_cast<LPARAM>(result.data()), SMTO_BLOCK, timeout, &length) || length != result.size() - 1) {
         return {};
     }
     result.pop_back(); // remove the last \0
@@ -84,7 +86,7 @@ std::string process::window_name() const {
 }
 
 std::string process::full_path() const {
-    HANDLE         handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id_);
+    const HANDLE   handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id_);
     handle_deleter hd{handle};
     if (handle == NULL) {
         return {};
@@ -114,11 +116,11 @@ std::chrono::system_clock::time_point process::start() const {
 // static
 
 std::vector<process> process::active_processes() {
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
         return {};
     }
-    handle_deleter hd{snapshot};
+    handle_deleter       hd{snapshot};
     std::vector<process> result;
 
     PROCESSENTRY32 entry = {};
@@ -138,7 +140,7 @@ std::vector<process> process::active_processes() {
 std::vector<process> process::active_windows() {
     std::vector<process>              result;
     std::function<BOOL(HWND, LPARAM)> cb = [&result](HWND hwnd, LPARAM lParam) -> BOOL {
-        int process_id = get_pid(hwnd);
+        const int process_id = get_pid(hwnd);
         if (process_id != -1) {
             result.push_back(process{process_id});
         }
@@ -149,7 +151,7 @@ std::vector<process> process::active_windows() {
 }
 
 process process::focused_window() {
-    HWND hwnd = GetForegroundWindow();
+    const HWND hwnd = GetForegroundWindow();
     if (!hwnd) {
         return process{-1};
     }
