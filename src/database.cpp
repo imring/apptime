@@ -120,14 +120,12 @@ std::vector<active> database::actives() const {
     std::vector<active> result;
     active              act;
 
+    using select_t = std::tuple<std::string, std::string, std::string, std::string>;
     SQLite::Statement select{db_, "SELECT a.path, a.name, al.start, al.end FROM active_logs AS al "
                                   "JOIN applications AS a ON al.program_id = a.id AND IS_IGNORED(a.path)=0 "
                                   "ORDER BY a.path"};
     while (select.executeStep()) {
-        const std::string path      = select.getColumn(0);
-        const std::string name      = select.getColumn(1);
-        const std::string start_str = select.getColumn(2);
-        const std::string end_str   = select.getColumn(3);
+        const auto [path, name, start_str, end_str] = select.getColumns<select_t, 4>();
 
         if (act.path != path) {
             if (!act.path.empty() && !act.times.empty()) {
@@ -153,14 +151,12 @@ std::vector<active> database::focuses() const {
     std::vector<active> result;
     active              act;
 
+    using select_t = std::tuple<std::string, std::string, std::string, std::string>;
     SQLite::Statement select{db_, "SELECT a.path, a.name, fl.start, fl.end FROM focus_logs AS fl "
                                   "JOIN applications AS a ON fl.program_id = a.id AND IS_IGNORED(a.path)=0 "
                                   "ORDER BY a.path"};
     while (select.executeStep()) {
-        const std::string path      = select.getColumn(0);
-        const std::string name      = select.getColumn(1);
-        const std::string start_str = select.getColumn(2);
-        const std::string end_str   = select.getColumn(3);
+        const auto [path, name, start_str, end_str] = select.getColumns<select_t, 4>();
 
         if (act.path != path) {
             if (!act.path.empty() && !act.times.empty()) {
@@ -185,10 +181,10 @@ std::vector<active> database::focuses() const {
 std::vector<ignore> database::ignores() const {
     std::vector<ignore> result;
 
+    using select_t = std::tuple<std::string, std::string>;
     SQLite::Statement select{db_, "SELECT * FROM ignores"};
     while (select.executeStep()) {
-        const std::string type_str = select.getColumn(0);
-        const std::string value    = select.getColumn(1);
+        const auto [type_str, value] = select.getColumns<select_t, 2>();
 
         const ignore_type type = type_str == "file" ? ignore_file : type_str == "path" ? ignore_path : invalid;
         if (type == invalid) {
