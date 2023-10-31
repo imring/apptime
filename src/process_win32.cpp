@@ -58,6 +58,27 @@ HWND get_hwnd(int pid) {
     return result;
 }
 
+#ifdef UNICODE
+using tstring = std::wstring;
+
+// https://stackoverflow.com/a/3999597
+std::string utf8_encode(std::wstring_view wstr) {
+    if (wstr.empty()) {
+        return {};
+    }
+    const int   size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), NULL, 0, NULL, NULL);
+    std::string result(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), result.data(), size_needed, NULL, NULL);
+    return result;
+}
+#else
+using tstring = std::string;
+
+std::string utf8_encode(std::string_view str) {
+    return {str};
+}
+#endif
+
 namespace apptime {
 bool process::exist() const {
     const HANDLE   handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
@@ -77,12 +98,12 @@ std::string process::window_name() const {
     if (!SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK, timeout, &length) || length <= 0) {
         return {};
     }
-    std::string result(length + 1, '\0');
+    tstring result(length + 1, '\0');
     if (!SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, std::bit_cast<LPARAM>(result.data()), SMTO_BLOCK, timeout, &length) || length != result.size() - 1) {
         return {};
     }
     result.pop_back(); // remove the last \0
-    return result;
+    return utf8_encode(result);
 }
 
 std::string process::full_path() const {
@@ -94,7 +115,7 @@ std::string process::full_path() const {
 
     TCHAR path[MAX_PATH] = {};
     if (GetModuleFileNameEx(handle, NULL, path, MAX_PATH) != 0) {
-        return {path};
+        return utf8_encode(path);
     }
     return {};
 }
