@@ -2,6 +2,7 @@
 #define APPTIME_MONITORING_HPP
 
 #include <mutex>
+#include <atomic>
 #include <chrono>
 
 #include "database.hpp"

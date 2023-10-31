@@ -1,5 +1,9 @@
 #include "monitoring.hpp"
 
+#include <ranges>
+#include <thread>
+#include <algorithm>
+
 using namespace std::chrono_literals;
 
 std::vector<apptime::process> filtered_processes() {

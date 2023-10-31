@@ -7,9 +7,26 @@ namespace fs = std::filesystem;
 auto parse_time(const std::string &time_str) {
     using namespace std::chrono;
 
+    constexpr const char    *time_format = "%Y-%m-%d %T";
     system_clock::time_point result;
     std::istringstream       ss{time_str};
-    ss >> parse("%F %T", result);
+
+#if __cpp_lib_chrono >= 201907L // std::chrono::parse
+    ss >> parse(time_format, result);
+#else
+    std::tm timeinfo = {};
+    ss >> std::get_time(&timeinfo, time_format);
+
+    // read subseconds
+    int subseconds = 0;
+    if (ss.peek() == '.') {
+        ss.ignore();
+        ss >> subseconds;
+    }
+
+    result = system_clock::from_time_t(std::mktime(&timeinfo)) + system_clock::duration{subseconds};
+#endif
+
     return result;
 }
 

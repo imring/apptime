@@ -75,7 +75,7 @@ std::string utf8_encode(std::wstring_view wstr) {
 using tstring = std::string;
 
 std::string utf8_encode(std::string_view str) {
-    return {str};
+    return std::string{str};
 }
 #endif
 
