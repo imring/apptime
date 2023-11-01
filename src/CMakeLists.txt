@@ -1,4 +1,6 @@
 add_executable(apptime
+    gui/tray.cpp
+
     database.cpp
     main.cpp
     monitoring.cpp
