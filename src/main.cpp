@@ -1,6 +1,8 @@
+#include <ranges>
+#include <thread>
 #include <iostream>
+#include <algorithm>
 
-#include "process.h"
 #include "database.hpp"
 #include "monitoring.hpp"
 
@@ -32,7 +34,9 @@ void process_test() {
         std::cout << v.full_path() << " " << v.start() << " " << v.window_name() << std::endl;
     }
     const auto focused = apptime::process::focused_window();
-    std::cout << std::endl << "Focused: " << focused.full_path() << " " << focused.start() << " " << focused.window_name() << std::endl;
+    if (focused.exist()) {
+        std::cout << std::endl << "Focused: " << focused.full_path() << " " << focused.start() << " " << focused.window_name() << std::endl;
+    }
 }
 
 void database_test() {
