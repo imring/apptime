@@ -2,6 +2,7 @@
 
 #include <ranges>
 #include <thread>
+#include <iostream>
 #include <algorithm>
 
 using namespace std::chrono_literals;
@@ -19,6 +20,7 @@ std::vector<apptime::process> filtered_processes() {
         return (apath < bpath) || (apath == bpath && a.start() < b.start());
     });
 
+    // select oldest processes
     const auto [first_unique, last_unique] = std::ranges::unique(result, [](const apptime::process &a, const apptime::process &b) {
         return a.full_path() == b.full_path() && a.start() <= b.start();
     });
@@ -30,39 +32,56 @@ std::vector<apptime::process> filtered_processes() {
 namespace apptime {
 monitoring::monitoring(database &db) : db_{db}, active_delay{5s}, focus_delay{1s}, running_{false} {}
 
+monitoring::~monitoring() {
+    stop();
+}
+
 void monitoring::start() {
-    running_ = true;
-    std::thread{&monitoring::active_thread, this}.detach();
-    std::thread{&monitoring::focus_thread, this}.detach();
+    running_       = true;
+    active_thread_ = std::thread{&monitoring::active_thread, this};
+    focus_thread_  = std::thread{&monitoring::focus_thread, this};
 }
 
 void monitoring::stop() {
     running_ = false;
+
+    // this is needed to stop threads immediately
+    cv.notify_all();
+    if (active_thread_.joinable()) {
+        active_thread_.join();
+    }
+    if (focus_thread_.joinable()) {
+        focus_thread_.join();
+    }
+}
+
+bool monitoring::running() const {
+    return running_;
 }
 
 void monitoring::active_thread() {
-    while (running_) {
-        std::chrono::milliseconds delay;
-        {
-            std::scoped_lock<std::mutex> lock{mutex_};
-            for (const auto &v: filtered_processes()) {
-                db_.add_active(v);
-            }
-            delay = active_delay;
+    while (running()) {
+        std::unique_lock<std::mutex> lock{mutex_};
+        if (cv.wait_for(lock, active_delay, [this] {
+                return !running();
+            })) {
+            return;
         }
-        std::this_thread::sleep_for(delay);
+        for (const auto &v: filtered_processes()) {
+            db_.add_active(v);
+        }
     }
 }
 
 void monitoring::focus_thread() {
-    while (running_) {
-        std::chrono::milliseconds delay;
-        {
-            std::scoped_lock<std::mutex> lock{mutex_};
-            db_.add_focus(process::focused_window());
-            delay = focus_delay;
+    while (running()) {
+        std::unique_lock<std::mutex> lock{mutex_};
+        if (cv.wait_for(lock, focus_delay, [this] {
+                return !running();
+            })) {
+            return;
         }
-        std::this_thread::sleep_for(delay);
+        db_.add_focus(process::focused_window());
     }
 }
 } // namespace apptime
