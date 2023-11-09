@@ -5,6 +5,7 @@
 
 namespace apptime {
 class tray : public QSystemTrayIcon {
+    Q_OBJECT
 public:
     tray(QObject *parent = nullptr);
 
