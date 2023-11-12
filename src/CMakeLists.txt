@@ -1,4 +1,5 @@
 add_executable(apptime
+    gui/table.cpp
     gui/tray.cpp
     gui/window.cpp
 
