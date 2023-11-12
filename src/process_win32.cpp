@@ -176,6 +176,13 @@ process process::focused_window() {
     if (!hwnd) {
         return process{-1};
     }
-    return process{get_pid(hwnd)};
+
+    static process last_focused{-1};
+    const int      pid = get_pid(hwnd);
+    if (pid != last_focused.process_id_) {
+        last_focused                = process{pid};
+        last_focused.focused_start_ = std::chrono::system_clock::now();
+    }
+    return last_focused;
 }
 } // namespace apptime

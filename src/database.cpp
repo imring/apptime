@@ -98,7 +98,7 @@ void database::add_focus(const process &p) {
     }
 
     const std::string path  = p.full_path();
-    const std::string start = std::format("{:L%F %T}", p.start());
+    const std::string start = std::format("{:L%F %T}", p.focused_start());
     const std::string end   = std::format("{:L%F %T}", std::chrono::system_clock::now());
 
     SQLite::Statement insert{db_, "INSERT OR REPLACE INTO focus_logs (program_id, start, end) VALUES "

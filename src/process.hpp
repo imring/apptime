@@ -15,12 +15,18 @@ public:
     std::string                           full_path() const;
     std::chrono::system_clock::time_point start() const;
 
+    // you must use this function with process::focused_window.
+    std::chrono::system_clock::time_point focused_start() const {
+        return focused_start_;
+    }
+
     static std::vector<process> active_processes();
     static std::vector<process> active_windows();
     static process              focused_window();
 
 private:
-    int process_id_;
+    int                                   process_id_;
+    std::chrono::system_clock::time_point focused_start_;
 };
 } // namespace apptime
 
