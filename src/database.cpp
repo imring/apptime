@@ -134,65 +134,35 @@ void database::remove_ignore(ignore_type type, std::string_view value) {
 }
 
 std::vector<active> database::actives() const {
-    std::vector<active> result;
-    active              act;
+    return actives_detail("active_logs");
+}
 
-    using select_t = std::tuple<std::string, std::string, std::string, std::string>;
-    SQLite::Statement select{db_, "SELECT a.path, a.name, al.start, al.end FROM active_logs AS al "
-                                  "JOIN applications AS a ON al.program_id = a.id AND IS_IGNORED(a.path)=0 "
-                                  "ORDER BY a.path"};
-    while (select.executeStep()) {
-        const auto [path, name, start_str, end_str] = select.getColumns<select_t, 4>();
+std::vector<active> database::actives(int year) const {
+    return actives_detail("active_logs", std::format(" AND strftime('%Y', logs.start)='{}'", year));
+}
 
-        if (act.path != path) {
-            if (!act.path.empty() && !act.times.empty()) {
-                result.push_back(act);
-            }
-            act.path = path;
-            act.name = name;
-            act.times.clear();
-        }
+std::vector<active> database::actives(int year, int month) const {
+    return actives_detail("active_logs", std::format(" AND strftime('%Y-%m', logs.start)='{}-{}'", year, month));
+}
 
-        const auto start = parse_time(start_str);
-        const auto end   = parse_time(end_str);
-        act.times.push_back({start, end});
-    }
-    if (!act.path.empty() && !act.times.empty()) {
-        result.push_back(act);
-    }
-
-    return result;
+std::vector<active> database::actives(int year, int month, int day) const {
+    return actives_detail("active_logs", std::format(" AND strftime('%Y-%m-%d', logs.start)='{}-{}-{}'", year, month, day));
 }
 
 std::vector<active> database::focuses() const {
-    std::vector<active> result;
-    active              act;
+    return actives_detail("focus_logs");
+}
 
-    using select_t = std::tuple<std::string, std::string, std::string, std::string>;
-    SQLite::Statement select{db_, "SELECT a.path, a.name, fl.start, fl.end FROM focus_logs AS fl "
-                                  "JOIN applications AS a ON fl.program_id = a.id AND IS_IGNORED(a.path)=0 "
-                                  "ORDER BY a.path"};
-    while (select.executeStep()) {
-        const auto [path, name, start_str, end_str] = select.getColumns<select_t, 4>();
+std::vector<active> database::focuses(int year) const {
+    return actives_detail("focus_logs", std::format(" AND strftime('%Y', logs.start)='{}'", year));
+}
 
-        if (act.path != path) {
-            if (!act.path.empty() && !act.times.empty()) {
-                result.push_back(act);
-            }
-            act.path = path;
-            act.name = name;
-            act.times.clear();
-        }
+std::vector<active> database::focuses(int year, int month) const {
+    return actives_detail("focus_logs", std::format(" AND strftime('%Y-%m', logs.start)='{}-{}'", year, month));
+}
 
-        const auto start = parse_time(start_str);
-        const auto end   = parse_time(end_str);
-        act.times.push_back({start, end});
-    }
-    if (!act.path.empty() && !act.times.empty()) {
-        result.push_back(act);
-    }
-
-    return result;
+std::vector<active> database::focuses(int year, int month, int day) const {
+    return actives_detail("focus_logs", std::format(" AND strftime('%Y-%m-%d', logs.start)='{}-{}-{}'", year, month, day));
 }
 
 std::vector<ignore> database::ignores() const {
@@ -208,6 +178,45 @@ std::vector<ignore> database::ignores() const {
             continue;
         }
         result.push_back({type, value});
+    }
+
+    return result;
+}
+
+std::vector<active> database::actives_detail(std::string_view table, std::string_view date_filter) const {
+    const std::string query_str = std::format("SELECT a.path, a.name, logs.start, logs.end FROM {} AS logs "
+                                              "JOIN applications AS a ON logs.program_id = a.id AND IS_IGNORED(a.path)=0 "
+                                              "WHERE 1{} "
+                                              "ORDER BY a.path",
+                                              table, date_filter);
+    SQLite::Statement select{db_, query_str};
+    return fill_actives(select);
+}
+
+std::vector<active> database::fill_actives(SQLite::Statement &select) const {
+    using select_t = std::tuple<std::string, std::string, std::string, std::string>;
+
+    std::vector<active> result;
+    active              act;
+
+    while (select.executeStep()) {
+        const auto [path, name, start_str, end_str] = select.getColumns<select_t, 4>();
+
+        if (act.path != path) {
+            if (!act.path.empty() && !act.times.empty()) {
+                result.push_back(act);
+            }
+            act.path = path;
+            act.name = name;
+            act.times.clear();
+        }
+
+        const auto start = parse_time(start_str);
+        const auto end   = parse_time(end_str);
+        act.times.push_back({start, end});
+    }
+    if (!act.path.empty() && !act.times.empty()) {
+        result.push_back(act);
     }
 
     return result;

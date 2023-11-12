@@ -31,10 +31,21 @@ public:
     void remove_ignore(ignore_type type, std::string_view value);
 
     std::vector<active> actives() const;
+    std::vector<active> actives(int year) const;
+    std::vector<active> actives(int year, int month) const;
+    std::vector<active> actives(int year, int month, int day) const;
+
     std::vector<active> focuses() const;
+    std::vector<active> focuses(int year) const;
+    std::vector<active> focuses(int year, int month) const;
+    std::vector<active> focuses(int year, int month, int day) const;
+
     std::vector<ignore> ignores() const;
 
 private:
+    std::vector<active> actives_detail(std::string_view table, std::string_view date_filter = {}) const;
+    std::vector<active> fill_actives(SQLite::Statement &stmt) const;
+
     bool valid_application(const process &p);
     bool is_ignored(const std::filesystem::path &path) const;
 
