@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 2.20)
+cmake_minimum_required(VERSION 3.20)
 project(apptime)
+
+option(APPTIME_TEST "Enable testing." ON)
 
 set(CMAKE_AUTOMOC ON)
 set(QT_VERSION 6)
@@ -14,3 +16,8 @@ if(UNIX)
 endif()
 
 add_subdirectory(src)
+
+if (APPTIME_TEST)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

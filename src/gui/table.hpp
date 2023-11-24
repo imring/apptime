@@ -10,7 +10,7 @@ class table : public QTableWidget {
 public:
     table(QWidget *parent = nullptr);
 
-    void update(const std::vector<active> &apps);
+    void update(const std::vector<record> &apps);
 };
 } // namespace apptime
 

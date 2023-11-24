@@ -1,4 +1,5 @@
 #include "monitoring.hpp"
+#include "process.hpp"
 
 #include <ranges>
 #include <thread>
@@ -26,6 +27,14 @@ std::vector<apptime::process> filtered_processes() {
     });
     result.erase(first_unique, last_unique);
 
+    return result;
+}
+
+apptime::record build_record(const apptime::process &proc) {
+    apptime::record result;
+    result.name = proc.window_name();
+    result.path = proc.full_path();
+    result.times.emplace_back(proc.start(), std::chrono::system_clock::now());
     return result;
 }
 
@@ -68,7 +77,7 @@ void monitoring::active_thread() {
             return;
         }
         for (const auto &v: filtered_processes()) {
-            db_.add_active(v);
+            db_.add_active(build_record(v));
         }
     }
 }
@@ -81,7 +90,7 @@ void monitoring::focus_thread() {
             })) {
             return;
         }
-        db_.add_focus(process::focused_window());
+        db_.add_focus(build_record(process::focused_window()));
     }
 }
 } // namespace apptime

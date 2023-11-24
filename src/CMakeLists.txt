@@ -15,7 +15,6 @@ elseif(UNIX)
     target_sources(apptime PRIVATE process_unix.cpp)
 endif()
 
-target_compile_features(apptime PRIVATE cxx_std_20)
 target_link_libraries(apptime PRIVATE
     SQLiteCpp
     SQLite::SQLite3
@@ -26,3 +25,4 @@ target_compile_definitions(apptime PRIVATE
     $<$<CONFIG:DEBUG>:DEBUG_MODE>
     $<$<CONFIG:RELEASE>:QT_NO_DEBUG_OUTPUT>
 )
+target_compile_features(apptime PRIVATE cxx_std_20)

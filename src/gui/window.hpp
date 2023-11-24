@@ -32,9 +32,6 @@ private:
     void addSeparator();
     void addResults();
 
-    template <typename... Args>
-    std::vector<apptime::active> updateWithFocused(bool focused, Args... args);
-
 private:
     QCheckBox *focus_widget_  = nullptr;
     QComboBox *filter_widget_ = nullptr;
@@ -44,14 +41,6 @@ private:
     database   db_;
     monitoring monitor_;
 };
-
-template <typename... Args>
-std::vector<apptime::active> window::updateWithFocused(bool focused, Args... args) {
-    if (focused) {
-        return db_.focuses(args...);
-    }
-    return db_.actives(args...);
-}
 } // namespace apptime
 
 #endif // APPTIME_GUI_WINDOW_HPP

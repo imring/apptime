@@ -9,7 +9,7 @@
 using namespace std::chrono;
 using app_duration_t = hh_mm_ss<system_clock::duration>;
 
-std::string application_name(const apptime::active &app) {
+std::string application_name(const apptime::record &app) {
     if (!app.name.empty()) {
         return app.name;
     }
@@ -17,7 +17,7 @@ std::string application_name(const apptime::active &app) {
     return path.filename().string();
 }
 
-hh_mm_ss<system_clock::duration> total_duration(const apptime::active &app) {
+hh_mm_ss<system_clock::duration> total_duration(const apptime::record &app) {
     system_clock::duration result{};
     for (const auto &[start, end]: app.times) {
         result += end - start;
@@ -25,12 +25,12 @@ hh_mm_ss<system_clock::duration> total_duration(const apptime::active &app) {
     return hh_mm_ss{result};
 }
 
-auto convert_actives(const std::vector<apptime::active> &apps) {
+auto convert_actives(const std::vector<apptime::record> &apps) {
     using result_t = std::pair<std::string, app_duration_t>;
     std::vector<result_t> result;
 
     result.reserve(apps.size());
-    std::ranges::transform(apps, std::back_inserter(result), [](const apptime::active &app) {
+    std::ranges::transform(apps, std::back_inserter(result), [](const apptime::record &app) {
         return std::make_pair(application_name(app), total_duration(app));
     });
     std::ranges::sort(result, [](const result_t &a, const result_t &b) {
@@ -51,11 +51,11 @@ table::table(QWidget *parent) : QTableWidget{parent} {
     setHorizontalHeaderLabels(header);
 }
 
-void table::update(const std::vector<active> &apps) {
+void table::update(const std::vector<record> &apps) {
     clearContents();
 
     const auto converted_apps = convert_actives(apps);
-    setRowCount(converted_apps.size());
+    setRowCount(static_cast<int>(converted_apps.size()));
     for (int i = 0; i < converted_apps.size(); i++) {
         const auto &v = converted_apps[i];
 

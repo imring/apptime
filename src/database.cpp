@@ -4,6 +4,7 @@
 
 namespace fs = std::filesystem;
 
+// parse a time string in a format "%Y-%m-%d %T" into a system_clock::time_point
 auto parse_time(const std::string &time_str) {
     using namespace std::chrono;
 
@@ -30,6 +31,7 @@ auto parse_time(const std::string &time_str) {
     return result;
 }
 
+// check if current is in the primary or child directory
 bool in_same_directory(const fs::path &current, const fs::path &directory) {
     if (current.empty() || directory.empty()) {
         return false;
@@ -41,8 +43,40 @@ bool in_same_directory(const fs::path &current, const fs::path &directory) {
     return !relative.empty() && relative.begin()->compare("..") != 0;
 }
 
+// convert options to a string for use in SQL queries.
+// path:           WHERE path='...'
+// year/month/day: WHERE strftime('%Y-%m-%d')='YYYY-mm-dd'
+std::string options_to_string(const apptime::database::options &opt) {
+    std::string result = "WHERE 1";
+    if (!opt.path.empty()) {
+        result += " AND path = '" + opt.path + "'";
+    }
+    if (opt.year || opt.month || opt.day) {
+        std::string fmt, date;
+        if (opt.year) {
+            fmt += "%Y-";
+            date = std::format("{}{:04d}-", date, opt.year.value());
+        }
+        if (opt.month) {
+            fmt += "%m-";
+            date = std::format("{}{:02d}-", date, opt.month.value());
+        }
+        if (opt.day) {
+            fmt += "%d-";
+            date = std::format("{}{:02d}-", date, opt.day.value());
+        }
+        if (!date.empty()) {
+            fmt.pop_back();
+            date.pop_back();
+        }
+
+        result = std::format("{0} AND (strftime('{1}', logs.start)='{2}' OR strftime('{1}', logs.end)='{2}')", result, fmt, date);
+    }
+    return result;
+}
+
 namespace apptime {
-database::database(std::string_view path) : db_{path.data(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE} {
+database::database(const std::filesystem::path &path) : db_{path.string(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE} {
     // create the applications table
     db_.exec("CREATE TABLE IF NOT EXISTS applications ("
              "id INTEGER NOT NULL,"
@@ -75,38 +109,50 @@ database::database(std::string_view path) : db_{path.data(), SQLite::OPEN_READWR
     db_.createFunction("IS_IGNORED", 1, false, this, &is_ignored_sqlite);
 }
 
-void database::add_active(const process &p) {
-    if (!valid_application(p)) {
-        return;
+bool database::add_active(const record &rec) {
+    if (!valid_application(rec)) {
+        return false;
     }
 
-    const std::string path  = p.full_path();
-    const std::string start = std::format("{:L%F %T}", p.start());
-    const std::string end   = std::format("{:L%F %T}", std::chrono::system_clock::now());
-
+    bool              result = true;
     SQLite::Statement insert{db_, "INSERT OR REPLACE INTO active_logs (program_id, start, end) VALUES "
                                   "((SELECT id FROM applications WHERE path=?), ?, ?)"};
-    insert.bind(1, path);
-    insert.bind(2, start);
-    insert.bind(3, end);
-    insert.exec();
+    for (const auto &[start, end]: rec.times) {
+        const std::string start_str = std::format("{:L%F %T}", start);
+        const std::string end_str   = std::format("{:L%F %T}", end);
+
+        insert.bind(1, rec.path);
+        insert.bind(2, start_str);
+        insert.bind(3, end_str);
+        result = result && insert.exec() == 1;
+
+        insert.reset();
+        insert.clearBindings();
+    }
+    return result;
 }
 
-void database::add_focus(const process &p) {
-    if (!valid_application(p)) {
-        return;
+bool database::add_focus(const record &rec) {
+    if (!valid_application(rec)) {
+        return false;
     }
 
-    const std::string path  = p.full_path();
-    const std::string start = std::format("{:L%F %T}", p.focused_start());
-    const std::string end   = std::format("{:L%F %T}", std::chrono::system_clock::now());
-
+    bool              result = true;
     SQLite::Statement insert{db_, "INSERT OR REPLACE INTO focus_logs (program_id, start, end) VALUES "
                                   "((SELECT id FROM applications WHERE path=?), ?, ?)"};
-    insert.bind(1, path);
-    insert.bind(2, start);
-    insert.bind(3, end);
-    insert.exec();
+    for (const auto &[start, end]: rec.times) {
+        const std::string start_str = std::format("{:L%F %T}", start);
+        const std::string end_str   = std::format("{:L%F %T}", end);
+
+        insert.bind(1, rec.path);
+        insert.bind(2, start_str);
+        insert.bind(3, end_str);
+        result = result && insert.exec() == 1;
+
+        insert.reset();
+        insert.clearBindings();
+    }
+    return result;
 }
 
 void database::add_ignore(ignore_type type, std::string_view value) {
@@ -133,43 +179,19 @@ void database::remove_ignore(ignore_type type, std::string_view value) {
     remove.exec();
 }
 
-std::vector<active> database::actives() const {
-    return actives_detail("active_logs");
+std::vector<record> database::actives(const options &opt) const {
+    return records_detail("active_logs", opt);
 }
 
-std::vector<active> database::actives(int year) const {
-    return actives_detail("active_logs", std::format(" AND strftime('%Y', logs.start)='{}'", year));
-}
-
-std::vector<active> database::actives(int year, int month) const {
-    return actives_detail("active_logs", std::format(" AND strftime('%Y-%m', logs.start)='{}-{}'", year, month));
-}
-
-std::vector<active> database::actives(int year, int month, int day) const {
-    return actives_detail("active_logs", std::format(" AND strftime('%Y-%m-%d', logs.start)='{}-{}-{}'", year, month, day));
-}
-
-std::vector<active> database::focuses() const {
-    return actives_detail("focus_logs");
-}
-
-std::vector<active> database::focuses(int year) const {
-    return actives_detail("focus_logs", std::format(" AND strftime('%Y', logs.start)='{}'", year));
-}
-
-std::vector<active> database::focuses(int year, int month) const {
-    return actives_detail("focus_logs", std::format(" AND strftime('%Y-%m', logs.start)='{}-{}'", year, month));
-}
-
-std::vector<active> database::focuses(int year, int month, int day) const {
-    return actives_detail("focus_logs", std::format(" AND strftime('%Y-%m-%d', logs.start)='{}-{}-{}'", year, month, day));
+std::vector<record> database::focuses(const options &opt) const {
+    return records_detail("focus_logs", opt);
 }
 
 std::vector<ignore> database::ignores() const {
     std::vector<ignore> result;
 
     using select_t = std::tuple<std::string, std::string>;
-    SQLite::Statement select{db_, "SELECT * FROM ignores"};
+    SQLite::Statement select{db_, "SELECT type, value FROM ignores"};
     while (select.executeStep()) {
         const auto [type_str, value] = select.getColumns<select_t, 2>();
 
@@ -183,54 +205,47 @@ std::vector<ignore> database::ignores() const {
     return result;
 }
 
-std::vector<active> database::actives_detail(std::string_view table, std::string_view date_filter) const {
+std::vector<record> database::records_detail(std::string_view table, const options &opt) const {
     const std::string query_str = std::format("SELECT a.path, a.name, logs.start, logs.end FROM {} AS logs "
                                               "JOIN applications AS a ON logs.program_id = a.id AND IS_IGNORED(a.path)=0 "
-                                              "WHERE 1{} "
+                                              "{} "
                                               "ORDER BY a.path",
-                                              table, date_filter);
+                                              table, options_to_string(opt));
     SQLite::Statement select{db_, query_str};
-    return fill_actives(select);
+    return fill_records(select);
 }
 
-std::vector<active> database::fill_actives(SQLite::Statement &select) const {
+std::vector<record> database::fill_records(SQLite::Statement &select) const {
     using select_t = std::tuple<std::string, std::string, std::string, std::string>;
 
-    std::vector<active> result;
-    active              act;
+    std::vector<record> result;
+    record              rec;
 
     while (select.executeStep()) {
         const auto [path, name, start_str, end_str] = select.getColumns<select_t, 4>();
 
-        if (act.path != path) {
-            if (!act.path.empty() && !act.times.empty()) {
-                result.push_back(act);
+        if (rec.path != path) {
+            if (!rec.path.empty() && !rec.times.empty()) {
+                result.push_back(rec);
             }
-            act.path = path;
-            act.name = name;
-            act.times.clear();
+            rec.path = path;
+            rec.name = name;
+            rec.times.clear();
         }
 
         const auto start = parse_time(start_str);
         const auto end   = parse_time(end_str);
-        act.times.push_back({start, end});
+        rec.times.push_back({start, end});
     }
-    if (!act.path.empty() && !act.times.empty()) {
-        result.push_back(act);
+    if (!rec.path.empty() && !rec.times.empty()) {
+        result.push_back(rec);
     }
 
     return result;
 }
 
-bool database::valid_application(const process &p) {
-    if (!p.exist()) {
-        return false;
-    }
-    const std::string path = p.full_path(), name = p.window_name();
-    if (path.empty()) {
-        return false;
-    }
-    if (is_ignored(path)) {
+bool database::valid_application(const record &rec) {
+    if (rec.path.empty() || is_ignored(rec.path)) {
         return false;
     }
 
@@ -238,18 +253,17 @@ bool database::valid_application(const process &p) {
 
     // update
     SQLite::Statement update{db_, "UPDATE applications SET name=? WHERE path=?"};
-    update.bind(1, name);
-    update.bind(2, path);
+    update.bind(1, rec.name);
+    update.bind(2, rec.path);
     if (update.exec()) {
         return true;
     }
 
     // if not exist, insert
     SQLite::Statement insert{db_, "INSERT INTO applications(path, name) VALUES (?, ?)"};
-    insert.bind(1, path);
-    insert.bind(2, name);
-    insert.exec();
-    return true;
+    insert.bind(1, rec.path);
+    insert.bind(2, rec.name);
+    return insert.exec() == 1;
 }
 
 bool database::is_ignored(const fs::path &path) const {

@@ -91,25 +91,29 @@ void window::addResults() {
 // signals
 
 void window::updateDate(const QDate &date) {
-    std::vector<apptime::active> actives;
+    std::vector<apptime::record> records;
     const bool                   focused = focus_widget_->checkState() != Qt::Unchecked;
+    apptime::database::options   opt;
     switch (filter_widget_->currentIndex()) {
     case 0:
-        actives = updateWithFocused(focused, date.year(), date.month(), date.day());
-        break;
+        opt.day = date.day();
+        [[fallthrough]];
     case 1:
-        actives = updateWithFocused(focused, date.year(), date.month());
-        break;
+        opt.month = date.month();
+        [[fallthrough]];
     case 2:
-        actives = updateWithFocused(focused, date.year());
-        break;
-    case 3:
-        actives = updateWithFocused(focused);
+        opt.year = date.year();
         break;
     default:
         break;
     }
-    table_widget_->update(actives);
+
+    if (focused) {
+        records = db_.focuses(opt);
+    } else {
+        records = db_.actives(opt);
+    }
+    table_widget_->update(records);
 }
 
 void window::updateFormat(int index) {
