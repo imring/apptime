@@ -30,11 +30,11 @@ std::vector<apptime::process> filtered_processes() {
     return result;
 }
 
-apptime::record build_record(const apptime::process &proc) {
+apptime::record build_record(const apptime::process &proc, bool focused = false) {
     apptime::record result;
     result.name = proc.window_name();
     result.path = proc.full_path();
-    result.times.emplace_back(proc.start(), std::chrono::system_clock::now());
+    result.times.emplace_back(focused ? proc.focused_start() : proc.start(), std::chrono::system_clock::now());
     return result;
 }
 
@@ -90,7 +90,7 @@ void monitoring::focus_thread() {
             })) {
             return;
         }
-        db_.add_focus(build_record(process::focused_window()));
+        db_.add_focus(build_record(process::focused_window(), true));
     }
 }
 } // namespace apptime
