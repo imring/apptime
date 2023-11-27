@@ -7,7 +7,14 @@
 #include <QMainWindow>
 
 #include "../monitoring.hpp"
-#include "table.hpp"
+#include "records.hpp"
+#include "ignore.hpp"
+
+// TODO:
+// - ignore (menubar);
+// - app histogram;
+// - view setting (show filenames only);
+// - style?
 
 namespace apptime {
 class window : public QMainWindow {
@@ -26,8 +33,11 @@ public slots:
     void updateDate(const QDate &date);
     void updateFormat(int index);
     void updateFocused(int state);
+    void addIgnore(ignore_type type, std::string_view path);
+    void removeIgnore(ignore_type type, std::string_view path);
 
 private:
+    void addMenubar();
     void addOptionalWidgets();
     void addSeparator();
     void addResults();
@@ -36,7 +46,9 @@ private:
     QCheckBox *focus_widget_  = nullptr;
     QComboBox *filter_widget_ = nullptr;
     QDateEdit *date_widget_   = nullptr;
-    table     *table_widget_  = nullptr;
+    records     *table_widget_  = nullptr;
+
+    ignore_window *ignore_window_ = nullptr;
 
     database   db_;
     monitoring monitor_;

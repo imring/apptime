@@ -43,8 +43,6 @@ public:
      */
     database(const std::filesystem::path &path);
 
-    // TODO: add_active(process) => process exist + add(active)
-
     /**
      * @brief Add an active record(s) to the database.
      *

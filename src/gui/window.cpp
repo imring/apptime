@@ -2,10 +2,14 @@
 
 #include <QFrame>
 #include <QLabel>
+#include <QMenuBar>
 #include <QTableView>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QCloseEvent>
+#include <QCoreApplication>
+
+#include "ignore.hpp"
 
 namespace apptime {
 window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monitor_{db_} {
@@ -21,12 +25,16 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
     addOptionalWidgets();
     addSeparator();
     addResults();
+    addMenubar();
 
     // initial update
     updateFormat(0);
 
     // monitor launch
     monitor_.start();
+
+    // add slots
+    connect(table_widget_, &records::addIgnore, this, &window::addIgnore);
 }
 
 void window::closeEvent(QCloseEvent *event) {
@@ -40,6 +48,39 @@ void window::toggle() {
     } else {
         monitor_.start();
     }
+}
+
+void window::addMenubar() {
+    // File
+    QMenu   *file_menu    = menuBar()->addMenu(tr("&File"));
+    QAction *close_action = new QAction{"&Close", this};
+    file_menu->addAction(close_action);
+
+    // View
+    QMenu   *view_menu    = menuBar()->addMenu(tr("&View"));
+    QAction *toggle_focus = new QAction{"&Focused only", this};
+    toggle_focus->setCheckable(true);
+    toggle_focus->setChecked(focus_widget_->checkState() != Qt::Unchecked);
+    view_menu->addAction(toggle_focus);
+    view_menu->addSeparator();
+    QAction *ignore_list = new QAction{"&Ignore list...", this};
+    view_menu->addAction(ignore_list);
+
+    // slots
+    connect(close_action, &QAction::triggered, &QCoreApplication::exit);
+    connect(toggle_focus, &QAction::triggered, focus_widget_, &QAbstractButton::toggle);
+    connect(focus_widget_, &QCheckBox::stateChanged, [toggle_focus](int state) {
+        toggle_focus->setChecked(state != Qt::Unchecked);
+    });
+    connect(ignore_list, &QAction::triggered, [this]() {
+        if (!ignore_window_) {
+            ignore_window_ = new ignore_window{this};
+            connect(ignore_window_, &ignore_window::needToAdd, this, &window::addIgnore);
+            connect(ignore_window_, &ignore_window::needToRemove, this, &window::removeIgnore);
+        }
+        ignore_window_->update(db_.ignores());
+        ignore_window_->show();
+    });
 }
 
 void window::addOptionalWidgets() {
@@ -84,7 +125,7 @@ void window::addSeparator() {
 }
 
 void window::addResults() {
-    table_widget_ = new table;
+    table_widget_ = new records;
     centralWidget()->layout()->addWidget(table_widget_);
 }
 
@@ -138,5 +179,21 @@ void window::updateFormat(int index) {
 
 void window::updateFocused(int state) {
     updateDate(date_widget_->date());
+}
+
+void window::addIgnore(ignore_type type, std::string_view path) {
+    db_.add_ignore(type, path);
+    updateDate(date_widget_->date());
+    if (ignore_window_) {
+        ignore_window_->update(db_.ignores());
+    }
+}
+
+void window::removeIgnore(ignore_type type, std::string_view path) {
+    db_.remove_ignore(type, path);
+    updateDate(date_widget_->date());
+    if (ignore_window_) {
+        ignore_window_->update(db_.ignores());
+    }
 }
 } // namespace apptime
