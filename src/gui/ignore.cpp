@@ -80,9 +80,13 @@ void ignore_window::openAddDialog() {
         layout->addRow("Select a type:", type_combo);
         layout->addRow("Input a path:", path_edit);
 
-        QPushButton *ok = new QPushButton{"OK", dialog_add_};
+        QHBoxLayout *hbox   = new QHBoxLayout{dialog_add_};
+        QPushButton *ok     = new QPushButton{"OK", dialog_add_};
+        QPushButton *cancel = new QPushButton{"Cancel", dialog_add_};
+        hbox->addWidget(ok);
+        hbox->addWidget(cancel);
+        layout->addRow(hbox);
 
-        layout->addWidget(ok);
         dialog_add_->setLayout(layout);
 
         connect(ok, &QPushButton::clicked, [this, type_combo, path_edit]() {
@@ -91,6 +95,7 @@ void ignore_window::openAddDialog() {
             path_edit->setText("");
             dialog_add_->close();
         });
+        connect(cancel, &QPushButton::clicked, dialog_add_, &QDialog::close);
     }
 
     dialog_add_->open();
