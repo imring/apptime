@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QCloseEvent>
+#include <QFormLayout>
 #include <QCoreApplication>
 
 #include "ignore.hpp"
@@ -85,31 +86,22 @@ void window::addMenubar() {
 
 void window::addOptionalWidgets() {
     const auto main_layout = static_cast<QVBoxLayout *>(centralWidget()->layout());
+    QFormLayout *option_layout = new QFormLayout{this};
 
     // Filter by: ____
-    {
-        QHBoxLayout *hbox = new QHBoxLayout;
-        hbox->addWidget(new QLabel{"Filter by:"});
-        filter_widget_ = new QComboBox;
-        filter_widget_->addItems({"Day", "Month", "Year", "All"});
-        hbox->addWidget(filter_widget_);
-
-        main_layout->addLayout(hbox);
-    }
+    filter_widget_ = new QComboBox;
+    filter_widget_->addItems({"Day", "Month", "Year", "All"});
+    option_layout->addRow("Filter by:", filter_widget_);
 
     // Select a date: ____
-    {
-        QHBoxLayout *hbox = new QHBoxLayout;
-        hbox->addWidget(new QLabel{"Select a date:"});
-        date_widget_ = new QDateEdit{QDate::currentDate()};
-        hbox->addWidget(date_widget_);
-
-        main_layout->addLayout(hbox);
-    }
+    date_widget_ = new QDateEdit{QDate::currentDate()};
+    option_layout->addRow("Select a date:", date_widget_);
 
     // _ Only focused processes
     focus_widget_ = new QCheckBox{"Only focused processes"};
-    main_layout->addWidget(focus_widget_);
+    option_layout->addRow(focus_widget_);
+
+    main_layout->addLayout(option_layout);
 
     connect(filter_widget_, &QComboBox::currentIndexChanged, this, &window::updateFormat);
     connect(date_widget_, &QDateEdit::userDateChanged, this, &window::updateDate);
