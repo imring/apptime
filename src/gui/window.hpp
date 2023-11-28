@@ -11,9 +11,7 @@
 #include "ignore.hpp"
 
 // TODO:
-// - ignore (menubar);
 // - app histogram;
-// - view setting (show filenames only);
 // - style?
 
 namespace apptime {
@@ -46,7 +44,9 @@ private:
     QCheckBox *focus_widget_  = nullptr;
     QComboBox *filter_widget_ = nullptr;
     QDateEdit *date_widget_   = nullptr;
-    records     *table_widget_  = nullptr;
+    records   *table_widget_  = nullptr;
+
+    QAction *toggle_names_ = nullptr;
 
     ignore_window *ignore_window_ = nullptr;
 

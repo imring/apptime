@@ -58,11 +58,21 @@ void window::addMenubar() {
     file_menu->addAction(close_action);
 
     // View
-    QMenu   *view_menu    = menuBar()->addMenu(tr("&View"));
+    QMenu *view_menu = menuBar()->addMenu(tr("&View"));
+
+    // _ Focused only
     QAction *toggle_focus = new QAction{"&Focused only", this};
     toggle_focus->setCheckable(true);
     toggle_focus->setChecked(focus_widget_->checkState() != Qt::Unchecked);
     view_menu->addAction(toggle_focus);
+
+    // _ Show window names
+    toggle_names_ = new QAction{"&Show window names", this};
+    toggle_names_->setCheckable(true);
+    toggle_names_->setChecked(true);
+    view_menu->addAction(toggle_names_);
+
+    // Ignore list...
     view_menu->addSeparator();
     QAction *ignore_list = new QAction{"&Ignore list...", this};
     view_menu->addAction(ignore_list);
@@ -82,10 +92,13 @@ void window::addMenubar() {
         ignore_window_->update(db_.ignores());
         ignore_window_->show();
     });
+    connect(toggle_names_, &QAction::triggered, [this]() {
+        updateDate(date_widget_->date());
+    });
 }
 
 void window::addOptionalWidgets() {
-    const auto main_layout = static_cast<QVBoxLayout *>(centralWidget()->layout());
+    const auto   main_layout   = static_cast<QVBoxLayout *>(centralWidget()->layout());
     QFormLayout *option_layout = new QFormLayout{this};
 
     // Filter by: ____
@@ -146,7 +159,7 @@ void window::updateDate(const QDate &date) {
     } else {
         records = db_.actives(opt);
     }
-    table_widget_->update(records);
+    table_widget_->update(records, toggle_names_->isChecked());
 }
 
 void window::updateFormat(int index) {

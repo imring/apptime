@@ -21,7 +21,7 @@ public:
 
     records(QWidget *parent = nullptr);
 
-    void update(const std::vector<record> &apps);
+    void update(const std::vector<record> &apps, bool window_names = false);
 
 signals:
     void addIgnore(ignore_type type, std::string_view path);

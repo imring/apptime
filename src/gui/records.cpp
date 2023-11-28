@@ -10,8 +10,8 @@
 
 using namespace std::chrono;
 
-std::string application_name(const apptime::record &app) {
-    if (!app.name.empty()) {
+std::string application_name(const apptime::record &app, bool window_names = false) {
+    if (window_names && !app.name.empty()) {
         return app.name;
     }
     const std::filesystem::path path{app.path};
@@ -26,12 +26,12 @@ apptime::records::app_duration_t total_duration(const apptime::record &app) {
     return hh_mm_ss{result};
 }
 
-auto convert_actives(const std::vector<apptime::record> &apps) {
+auto convert_actives(const std::vector<apptime::record> &apps, bool window_names = false) {
     std::vector<apptime::records::table_info> result;
 
     result.reserve(apps.size());
-    std::ranges::transform(apps, std::back_inserter(result), [](const apptime::record &app) {
-        return apptime::records::table_info{app.path, application_name(app), total_duration(app)};
+    std::ranges::transform(apps, std::back_inserter(result), [window_names](const apptime::record &app) {
+        return apptime::records::table_info{app.path, application_name(app, window_names), total_duration(app)};
     });
     std::ranges::sort(result, [](const apptime::records::table_info &a, const apptime::records::table_info &b) {
         return a.duration.to_duration() > b.duration.to_duration();
@@ -54,10 +54,10 @@ records::records(QWidget *parent) : QTableWidget{parent}, contextMenu_{new QMenu
     connect(this, &QTableWidget::customContextMenuRequested, this, &records::showContextMenu);
 }
 
-void records::update(const std::vector<record> &apps) {
+void records::update(const std::vector<record> &apps, bool window_names) {
     clearContents();
 
-    list_ = convert_actives(apps);
+    list_ = convert_actives(apps, window_names);
     setRowCount(static_cast<int>(list_.size()));
     for (int i = 0; i < list_.size(); i++) {
         const auto &v = list_[i];
