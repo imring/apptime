@@ -31,6 +31,7 @@ std::chrono::system_clock::time_point filetime_to_chrono(const FILETIME &ft) {
     return time;
 }
 
+// util function that allows to use lambda-expressions in EnumWindows
 BOOL CALLBACK enum_windows_cb(HWND hwnd, LPARAM lparam) {
     const auto func = std::bit_cast<std::function<BOOL(HWND, LPARAM)> *>(lparam);
     return (*func)(hwnd, lparam);
