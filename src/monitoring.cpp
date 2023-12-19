@@ -5,29 +5,34 @@
 #include <thread>
 #include <iostream>
 #include <algorithm>
+#include <unordered_map>
 
 using namespace std::chrono_literals;
 
-std::vector<apptime::process> filtered_processes() {
-    std::vector<apptime::process> result = apptime::process::active_windows();
+// monitoring writes processes that have a window. among identical processes writes the oldest.
+std::vector<apptime::process> filtered_windows() {
+    std::unordered_map<std::string, apptime::process> result;
+    for (const auto &win: apptime::process::active_windows()) {
+        const std::string path = win.full_path();
+        if (path.empty()) {
+            continue;
+        }
 
-    const auto [first_remove, last_remove] = std::ranges::remove_if(result, [](const apptime::process &a) {
-        return a.full_path().empty();
-    });
-    result.erase(first_remove, last_remove);
+        const auto it = result.find(path);
+        if (it == result.end()) {
+            // write a new process
+            result.emplace(path, win);
+            continue;
+        }
 
-    std::ranges::sort(result, [](const apptime::process &a, const apptime::process &b) {
-        const std::string apath = a.full_path(), bpath = b.full_path();
-        return (apath < bpath) || (apath == bpath && a.start() < b.start());
-    });
+        // select the oldest process
+        if (win.start() > it->second.start()) {
+            it->second = win;
+        }
+    }
 
-    // select oldest processes
-    const auto [first_unique, last_unique] = std::ranges::unique(result, [](const apptime::process &a, const apptime::process &b) {
-        return a.full_path() == b.full_path() && a.start() <= b.start();
-    });
-    result.erase(first_unique, last_unique);
-
-    return result;
+    const auto values = result | std::views::values;
+    return std::vector<apptime::process>{values.begin(), values.end()};
 }
 
 apptime::record build_record(const apptime::process &proc, bool focused = false) {
@@ -76,7 +81,7 @@ void monitoring::active_thread() {
             })) {
             return;
         }
-        for (const auto &v: filtered_processes()) {
+        for (const auto &v: filtered_windows()) {
             db_.add_active(build_record(v));
         }
     }
