@@ -143,11 +143,11 @@ private:
     bool is_ignored(const std::filesystem::path &path) const;
 
     /**
-     * @brief
+     * @brief SQLite function for checking whether a path is ignored.
      *
-     * @param context
-     * @param argc
-     * @param argv
+     * @param context The SQLite context.
+     * @param argc The number of arguments.
+     * @param argv The SQLite values.
      */
     static void is_ignored_sqlite(sqlite3_context *context, int argc, sqlite3_value **argv);
 
