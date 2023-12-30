@@ -7,6 +7,8 @@
 #include <psapi.h>
 #include <tlhelp32.h>
 
+#include "encoding.hpp"
+
 class handle_deleter {
 public:
     handle_deleter(HANDLE handle) : handle_{handle} {}
@@ -60,24 +62,7 @@ HWND get_hwnd(int pid) {
 }
 
 #ifdef UNICODE
-using tstring = std::wstring;
-
-// https://stackoverflow.com/a/3999597
-std::string utf8_encode(std::wstring_view wstr) {
-    if (wstr.empty()) {
-        return {};
-    }
-    const int   size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), NULL, 0, NULL, NULL);
-    std::string result(size_needed, 0);
-    WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), result.data(), size_needed, NULL, NULL);
-    return result;
-}
 #else
-using tstring = std::string;
-
-std::string utf8_encode(std::string_view str) {
-    return std::string{str};
-}
 #endif
 
 namespace apptime {

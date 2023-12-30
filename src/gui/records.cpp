@@ -8,6 +8,8 @@
 #include <QHeaderView>
 #include <QGuiApplication>
 
+#include "platforms/icon.hpp"
+
 using namespace std::chrono;
 
 std::string application_name(const apptime::record &app, bool window_names = false) {
@@ -65,6 +67,9 @@ void records::update(const std::vector<record> &apps, bool window_names) {
         QTableWidgetItem *name = new QTableWidgetItem{QString::fromStdString(v.name)};
         name->setFlags(name->flags() & ~Qt::ItemIsEditable);
         setItem(i, 0, name);
+        if (QIcon icon = application_icon(v.path); !icon.isNull()) {
+            name->setIcon(icon);
+        }
 
         const std::string total_str =
             std::format("{:02d}:{:02d}:{:02d}", v.duration.hours().count(), v.duration.minutes().count(), v.duration.seconds().count());

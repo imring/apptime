@@ -10,12 +10,15 @@ add_executable(apptime
 )
 
 if(WIN32)
-    target_sources(apptime PRIVATE process_win32.cpp)
+    target_sources(apptime PRIVATE platforms/encoding_win32.cpp)
+    target_sources(apptime PRIVATE platforms/icon_win32.cpp)
+    target_sources(apptime PRIVATE platforms/process_win32.cpp)
 elseif(UNIX)
     target_link_libraries(apptime PRIVATE PkgConfig::PROCPS)
-    target_sources(apptime PRIVATE process_unix.cpp)
+    target_sources(apptime PRIVATE platforms/process_unix.cpp)
 endif()
 
+target_include_directories(apptime PRIVATE .)
 target_link_libraries(apptime PRIVATE
     SQLiteCpp
     SQLite::SQLite3

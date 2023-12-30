@@ -4,8 +4,8 @@
 #include <QMenu>
 #include <QApplication>
 
-QString status_text(bool value) {
-    return value ? "Stop" : "Start";
+QString status_text(bool running) {
+    return running ? "Stop" : "Start";
 }
 
 namespace apptime {
