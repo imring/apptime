@@ -35,12 +35,15 @@ public slots:
     void removeIgnore(ignore_type type, std::string_view path);
 
 private:
+    enum class DateFormat { Day, Month, Year, All };
+
     void addMenubar();
     void addOptionalWidgets();
     void addSeparator();
     void addResults();
 
-private:
+    void updateRecords();
+
     QCheckBox *focus_widget_  = nullptr;
     QComboBox *filter_widget_ = nullptr;
     QDateEdit *date_widget_   = nullptr;

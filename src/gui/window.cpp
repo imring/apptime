@@ -29,7 +29,7 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
     addMenubar();
 
     // initial update
-    updateFormat(0);
+    updateRecords();
 
     // monitor launch
     monitor_.start();
@@ -134,26 +134,26 @@ void window::addResults() {
     centralWidget()->layout()->addWidget(table_widget_);
 }
 
-// signals
+void window::updateRecords() {
+    const QDate date    = date_widget_->date();
+    const bool  focused = focus_widget_->checkState() != Qt::Unchecked;
 
-void window::updateDate(const QDate &date) {
-    std::vector<apptime::record> records;
-    const bool                   focused = focus_widget_->checkState() != Qt::Unchecked;
-    apptime::database::options   opt;
-    switch (filter_widget_->currentIndex()) {
-    case 0:
+    apptime::database::options opt;
+    switch (static_cast<DateFormat>(filter_widget_->currentIndex())) {
+    case DateFormat::Day:
         opt.day = date.day();
         [[fallthrough]];
-    case 1:
+    case DateFormat::Month:
         opt.month = date.month();
         [[fallthrough]];
-    case 2:
+    case DateFormat::Year:
         opt.year = date.year();
         break;
     default:
         break;
     }
 
+    std::vector<apptime::record> records;
     if (focused) {
         records = db_.focuses(opt);
     } else {
@@ -162,33 +162,42 @@ void window::updateDate(const QDate &date) {
     table_widget_->update(records, toggle_names_->isChecked());
 }
 
+// signals
+
+void window::updateDate(const QDate &date) {
+    updateRecords();
+}
+
 void window::updateFormat(int index) {
-    switch (index) {
-    case 0:
-        date_widget_->setDisplayFormat("dd.MM.yyyy");
+    QString format;
+    switch (static_cast<DateFormat>(index)) {
+    case DateFormat::Day:
+        format = "dd.MM.yyyy";
         break;
-    case 1:
-        date_widget_->setDisplayFormat("MM.yyyy");
+    case DateFormat::Month:
+        format = "MM.yyyy";
         break;
-    case 2:
-        date_widget_->setDisplayFormat("yyyy");
+    case DateFormat::Year:
+        format = "yyyy";
         break;
-    case 3:
-        date_widget_->setDisplayFormat("");
+    case DateFormat::All:
+        format = "";
         break;
     default:
         break;
     }
+
+    date_widget_->setDisplayFormat(format);
     updateDate(date_widget_->date());
 }
 
 void window::updateFocused(int state) {
-    updateDate(date_widget_->date());
+    updateRecords();
 }
 
 void window::addIgnore(ignore_type type, std::string_view path) {
     db_.add_ignore(type, path);
-    updateDate(date_widget_->date());
+    updateRecords();
     if (ignore_window_) {
         ignore_window_->update(db_.ignores());
     }
@@ -196,7 +205,7 @@ void window::addIgnore(ignore_type type, std::string_view path) {
 
 void window::removeIgnore(ignore_type type, std::string_view path) {
     db_.remove_ignore(type, path);
-    updateDate(date_widget_->date());
+    updateRecords();
     if (ignore_window_) {
         ignore_window_->update(db_.ignores());
     }
