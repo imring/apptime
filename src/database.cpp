@@ -144,10 +144,12 @@ bool in_same_directory(const fs::path &current, const fs::path &directory) {
 }
 
 std::string ignore_to_string(apptime::ignore_type value) {
+    // clang-format off
     static const std::unordered_map<apptime::ignore_type, std::string> ignores = {
         { apptime::ignore_path, "path" },
         { apptime::ignore_file, "file" }
     };
+    // clang-format on
     if (auto it = ignores.find(value); it != ignores.end()) {
         return it->second;
     }
@@ -155,10 +157,12 @@ std::string ignore_to_string(apptime::ignore_type value) {
 }
 
 apptime::ignore_type string_to_enum(std::string value) {
+    // clang-format off
     static const std::unordered_map<std::string, apptime::ignore_type> ignores = {
         { "path", apptime::ignore_path },
         { "file", apptime::ignore_file }
     };
+    // clang-format on
     if (auto it = ignores.find(value); it != ignores.end()) {
         return it->second;
     }
@@ -384,7 +388,7 @@ void database::is_ignored_sqlite(sqlite3_context *context, int argc, sqlite3_val
     }
 
     const std::string_view path(std::bit_cast<const char *>(text), size);
-    const database        *self = static_cast<database *>(sqlite3_user_data(context));
+    const auto             self = static_cast<database *>(sqlite3_user_data(context));
     sqlite3_result_int(context, self->is_ignored(path) ? 1 : 0);
 }
 } // namespace apptime

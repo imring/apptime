@@ -60,8 +60,8 @@ system_clock::time_point process::start() const {
     PROCTAB *proc = openproc(PROC_PID | PROC_FILLSTAT, &pid_list);
     while (readproc(proc, &proc_info)) {
         if (proc_info.tid == process_id_) {
-            std::time_t start = static_cast<std::time_t>(proc_info.start_time / sysconf(_SC_CLK_TCK)) + system_boot_time();
-            result            = system_clock::from_time_t(start);
+            const auto start = static_cast<std::time_t>(proc_info.start_time / sysconf(_SC_CLK_TCK)) + system_boot_time();
+            result           = system_clock::from_time_t(start);
             break;
         }
     }
