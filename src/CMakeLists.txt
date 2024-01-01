@@ -30,3 +30,7 @@ target_compile_definitions(apptime PRIVATE
     $<$<CONFIG:RELEASE>:QT_NO_DEBUG_OUTPUT>
 )
 target_compile_features(apptime PRIVATE cxx_std_20)
+
+if (WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
+    set_property(TARGET apptime PROPERTY WIN32_EXECUTABLE true)
+endif()
