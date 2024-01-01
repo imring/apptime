@@ -56,10 +56,10 @@ records::records(QWidget *parent) : QTableWidget{parent}, contextMenu_{new QMenu
     connect(this, &QTableWidget::customContextMenuRequested, this, &records::showContextMenu);
 }
 
-void records::update(const std::vector<record> &apps, bool window_names) {
+void records::update(const std::vector<record> &apps, const settings &set) {
     clearContents();
 
-    list_ = convert_actives(apps, window_names);
+    list_ = convert_actives(apps, set.window_names);
     setRowCount(static_cast<int>(list_.size()));
     for (int i = 0; i < list_.size(); i++) {
         const auto &v = list_[i];
@@ -67,8 +67,8 @@ void records::update(const std::vector<record> &apps, bool window_names) {
         QTableWidgetItem *name = new QTableWidgetItem{QString::fromStdString(v.name)};
         name->setFlags(name->flags() & ~Qt::ItemIsEditable);
         setItem(i, 0, name);
-        if (QIcon icon = application_icon(v.path); !icon.isNull()) {
-            name->setIcon(icon);
+        if (set.icons) {
+            name->setIcon(application_icon(v.path));
         }
 
         const std::string total_str =

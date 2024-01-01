@@ -53,6 +53,7 @@ private:
     records   *table_widget_  = nullptr;
 
     QAction *toggle_names_ = nullptr;
+    QAction *toggle_icons_ = nullptr;
 
     ignore_window *ignore_window_ = nullptr;
 

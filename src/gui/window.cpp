@@ -79,6 +79,11 @@ void window::addMenubar() {
     toggle_names_->setCheckable(true);
     view_menu->addAction(toggle_names_);
 
+    // _ Show application icons
+    toggle_icons_ = new QAction{"&Show application icons", this};
+    toggle_icons_->setCheckable(true);
+    view_menu->addAction(toggle_icons_);
+
     // Ignore list...
     view_menu->addSeparator();
     QAction *ignore_list = new QAction{"&Ignore list...", this};
@@ -100,6 +105,7 @@ void window::addMenubar() {
         ignore_window_->show();
     });
     connect(toggle_names_, &QAction::triggered, this, &window::updateRecords);
+    connect(toggle_icons_, &QAction::triggered, this, &window::updateRecords);
 }
 
 void window::addOptionalWidgets() {
@@ -164,7 +170,12 @@ void window::updateRecords() {
     } else {
         records = db_.actives(opt);
     }
-    table_widget_->update(records, toggle_names_->isChecked());
+
+    const records::settings set{
+        .window_names = toggle_names_->isChecked(),
+        .icons = toggle_icons_->isChecked()
+    };
+    table_widget_->update(records, set);
 }
 
 QString window::getDateFormat(DateFormat format) const {
@@ -221,8 +232,8 @@ void window::readSettings() {
     const auto date_format = settings.value("date_format", static_cast<int>(DateFormat::Day)).toInt();
     date_widget_->setDisplayFormat(getDateFormat(static_cast<DateFormat>(date_format)));
 
-    const auto disable_icons = settings.value("disable_icons", false).toBool();
-    // TODO: disable icons
+    const auto show_icons = settings.value("show_icons", true).toBool();
+    toggle_icons_->setChecked(show_icons);
     settings.endGroup();
 }
 
@@ -239,7 +250,7 @@ void window::saveSettings() {
     settings.setValue("focused_only", focus_widget_->checkState() == Qt::Checked);
     settings.setValue("window_names", toggle_names_->isChecked());
     settings.setValue("date_format", static_cast<int>(getDateFormat(date_widget_->displayFormat())));
-    // TODO: disable icons
+    settings.setValue("show_icons", toggle_icons_->isChecked());
     settings.endGroup();
 }
 

@@ -19,9 +19,16 @@ public:
         app_duration_t duration;
     };
 
+    struct settings {
+        // show the window name instead of the file name
+        bool window_names = false;
+        // show application icons
+        bool icons = false;
+    };
+
     records(QWidget *parent = nullptr);
 
-    void update(const std::vector<record> &apps, bool window_names = false);
+    void update(const std::vector<record> &apps, const settings &set = {});
 
 signals:
     void addIgnore(ignore_type type, std::string_view path);
