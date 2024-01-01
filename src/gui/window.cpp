@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QLabel>
 #include <QMenuBar>
+#include <QSettings>
 #include <QTableView>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -29,6 +30,7 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
     addMenubar();
 
     // initial update
+    readSettings();
     updateRecords();
 
     // monitor launch
@@ -39,8 +41,14 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
 }
 
 void window::closeEvent(QCloseEvent *event) {
-    event->ignore();
-    hide();
+    if (event->spontaneous()) { // close by user
+        event->ignore();
+        hide();
+        return;
+    }
+
+    // close by program
+    saveSettings();
 }
 
 void window::toggle() {
@@ -69,7 +77,6 @@ void window::addMenubar() {
     // _ Show window names
     toggle_names_ = new QAction{"&Show window names", this};
     toggle_names_->setCheckable(true);
-    toggle_names_->setChecked(true);
     view_menu->addAction(toggle_names_);
 
     // Ignore list...
@@ -92,9 +99,7 @@ void window::addMenubar() {
         ignore_window_->update(db_.ignores());
         ignore_window_->show();
     });
-    connect(toggle_names_, &QAction::triggered, [this]() {
-        updateDate(date_widget_->date());
-    });
+    connect(toggle_names_, &QAction::triggered, this, &window::updateRecords);
 }
 
 void window::addOptionalWidgets() {
@@ -117,8 +122,8 @@ void window::addOptionalWidgets() {
     main_layout->addLayout(option_layout);
 
     connect(filter_widget_, &QComboBox::currentIndexChanged, this, &window::updateFormat);
-    connect(date_widget_, &QDateEdit::userDateChanged, this, &window::updateDate);
-    connect(focus_widget_, &QCheckBox::stateChanged, this, &window::updateFocused);
+    connect(date_widget_, &QDateEdit::userDateChanged, this, &window::updateRecords);
+    connect(focus_widget_, &QCheckBox::stateChanged, this, &window::updateRecords);
 }
 
 void window::addSeparator() {
@@ -162,36 +167,89 @@ void window::updateRecords() {
     table_widget_->update(records, toggle_names_->isChecked());
 }
 
-// signals
-
-void window::updateDate(const QDate &date) {
-    updateRecords();
-}
-
-void window::updateFormat(int index) {
-    QString format;
-    switch (static_cast<DateFormat>(index)) {
+QString window::getDateFormat(DateFormat format) const {
+    QString result;
+    switch (format) {
     case DateFormat::Day:
-        format = "dd.MM.yyyy";
+        result = "dd.MM.yyyy";
         break;
     case DateFormat::Month:
-        format = "MM.yyyy";
+        result = "MM.yyyy";
         break;
     case DateFormat::Year:
-        format = "yyyy";
+        result = "yyyy";
         break;
     case DateFormat::All:
-        format = "";
+        result = "";
         break;
     default:
         break;
     }
-
-    date_widget_->setDisplayFormat(format);
-    updateDate(date_widget_->date());
+    return result;
 }
 
-void window::updateFocused(int state) {
+window::DateFormat window::getDateFormat(QString format) const {
+    if (format == "dd.MM.yyyy") {
+        return DateFormat::Day;
+    } else if (format == "MM.yyyy") {
+        return DateFormat::Month;
+    } else if (format == "yyyy") {
+        return DateFormat::Year;
+    }
+    return DateFormat::All;
+}
+
+void window::readSettings() {
+    QSettings settings;
+
+    // window
+    settings.beginGroup("window");
+    const auto geometry = settings.value("geometry", QByteArray{}).toByteArray();
+    if (!geometry.isEmpty()) {
+        restoreGeometry(geometry);
+    }
+    settings.endGroup();
+
+    // view
+    settings.beginGroup("view");
+    const auto focused_only = settings.value("focused_only", false).toBool();
+    focus_widget_->setCheckState(focused_only ? Qt::Checked : Qt::Unchecked);
+
+    const auto window_names = settings.value("window_names", true).toBool();
+    toggle_names_->setChecked(window_names);
+
+    const auto date_format = settings.value("date_format", static_cast<int>(DateFormat::Day)).toInt();
+    date_widget_->setDisplayFormat(getDateFormat(static_cast<DateFormat>(date_format)));
+
+    const auto disable_icons = settings.value("disable_icons", false).toBool();
+    // TODO: disable icons
+    settings.endGroup();
+}
+
+void window::saveSettings() {
+    QSettings settings;
+
+    // window
+    settings.beginGroup("window");
+    settings.setValue("geometry", saveGeometry());
+    settings.endGroup();
+
+    // view
+    settings.beginGroup("view");
+    settings.setValue("focused_only", focus_widget_->checkState() == Qt::Checked);
+    settings.setValue("window_names", toggle_names_->isChecked());
+    settings.setValue("date_format", static_cast<int>(getDateFormat(date_widget_->displayFormat())));
+    // TODO: disable icons
+    settings.endGroup();
+}
+
+// signals
+
+void window::updateFormat(int index) {
+    QSettings settings;
+
+    const DateFormat format = static_cast<DateFormat>(index);
+    date_widget_->setDisplayFormat(getDateFormat(format));
     updateRecords();
 }
 

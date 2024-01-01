@@ -28,19 +28,22 @@ public:
     }
 
 public slots:
-    void updateDate(const QDate &date);
     void updateFormat(int index);
-    void updateFocused(int state);
     void addIgnore(ignore_type type, std::string_view path);
     void removeIgnore(ignore_type type, std::string_view path);
 
 private:
     enum class DateFormat { Day, Month, Year, All };
+    QString getDateFormat(DateFormat format) const;
+    DateFormat getDateFormat(QString format) const;
 
     void addMenubar();
     void addOptionalWidgets();
     void addSeparator();
     void addResults();
+
+    void readSettings();
+    void saveSettings();
 
     void updateRecords();
 

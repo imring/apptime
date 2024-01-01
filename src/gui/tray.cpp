@@ -39,6 +39,8 @@ tray::tray(QObject *parent) : QSystemTrayIcon{parent}, menu_{new QMenu{}} {
 
     QAction *close_action = new QAction{"Close", this};
     menu_->addAction(close_action);
-    connect(close_action, &QAction::triggered, &QCoreApplication::quit);
+    connect(close_action, &QAction::triggered, [this]() {
+        qobject_cast<window *>(this->parent())->close();
+    });
 }
 } // namespace apptime
