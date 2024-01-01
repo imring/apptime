@@ -104,7 +104,7 @@ void window::addMenubar() {
 
 void window::addOptionalWidgets() {
     const auto   main_layout   = static_cast<QVBoxLayout *>(centralWidget()->layout());
-    QFormLayout *option_layout = new QFormLayout{this};
+    QFormLayout *option_layout = new QFormLayout;
 
     // Filter by: ____
     filter_widget_ = new QComboBox;
