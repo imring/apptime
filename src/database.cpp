@@ -32,8 +32,8 @@ private:
     std::string where();
 
     // input
-    std::string                       table_name_;
-    const apptime::database::options &opts_;
+    std::string                table_name_;
+    apptime::database::options opts_;
 
     // output
     std::string                                  query_;
@@ -70,12 +70,12 @@ std::string select_records::where() {
 
     // day/month/year
     std::string date_format, date_value, date_start, date_next;
-    if (opts_.day) {
+    if (opts_.day && opts_.month && opts_.year) {
         date_format = "%Y-%m-%d";
         date_value  = std::format("{:d}-{:02d}-{:02d}", opts_.year.value(), opts_.month.value(), opts_.day.value());
         date_start  = "start of day";
         date_next   = "+1 day";
-    } else if (opts_.month) {
+    } else if (opts_.month && opts_.year) {
         date_format = "%Y-%m";
         date_value  = std::format("{:d}-{:02d}", opts_.year.value(), opts_.month.value());
         date_start  = "start of month";
@@ -156,9 +156,9 @@ std::string ignore_to_string(apptime::ignore_type value) {
     return "";
 }
 
-apptime::ignore_type string_to_enum(std::string value) {
+apptime::ignore_type string_to_enum(std::string_view value) {
     // clang-format off
-    static const std::unordered_map<std::string, apptime::ignore_type> ignores = {
+    static const std::unordered_map<std::string_view, apptime::ignore_type> ignores = {
         { "path", apptime::ignore_path },
         { "file", apptime::ignore_file }
     };
@@ -306,15 +306,15 @@ std::vector<ignore> database::ignores() const {
 }
 
 std::vector<record> database::records_detail(std::string_view table, const options &opt) const {
-    select_records    builder{table, opt};
-    SQLite::Statement select{db_, builder.query()};
+    const select_records builder{table, opt};
+    SQLite::Statement    select{db_, builder.query()};
     for (const auto &[key, value]: builder.binds()) {
         select.bind(key, value);
     }
     return fill_records(select);
 }
 
-std::vector<record> database::fill_records(SQLite::Statement &select) const {
+std::vector<record> database::fill_records(SQLite::Statement &select) {
     using select_t = std::tuple<std::string, std::string, std::string, std::string>;
 
     std::vector<record> result;
@@ -388,7 +388,7 @@ void database::is_ignored_sqlite(sqlite3_context *context, int argc, sqlite3_val
     }
 
     const std::string_view path(std::bit_cast<const char *>(text), size);
-    const auto             self = static_cast<database *>(sqlite3_user_data(context));
+    const auto            *self = static_cast<database *>(sqlite3_user_data(context));
     sqlite3_result_int(context, self->is_ignored(path) ? 1 : 0);
 }
 } // namespace apptime

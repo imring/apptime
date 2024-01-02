@@ -8,11 +8,11 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setOrganizationDomain("imring.dev");
     QCoreApplication::setApplicationName("apptime");
 
-    QApplication    app{argc, argv};
-    apptime::window window;
-    apptime::tray   tray_icon{&window};
+    const QApplication app{argc, argv};
+    apptime::window    window;
+    apptime::tray      tray_icon{&window};
 
     window.show();
     tray_icon.show();
-    return app.exec();
+    return QApplication::exec();
 }

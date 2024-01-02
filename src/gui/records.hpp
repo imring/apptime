@@ -21,9 +21,9 @@ public:
 
     struct settings {
         // show the window name instead of the file name
-        bool window_names = false;
+        bool window_names;
         // show application icons
-        bool icons = false;
+        bool icons;
     };
 
     records(QWidget *parent = nullptr);

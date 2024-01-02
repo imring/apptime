@@ -1,13 +1,16 @@
 #include "monitoring.hpp"
 #include "platforms/process.hpp"
 
+#include <algorithm>
+#include <iostream>
 #include <ranges>
 #include <thread>
-#include <iostream>
-#include <algorithm>
 #include <unordered_map>
 
 using namespace std::chrono_literals;
+
+const std::chrono::milliseconds default_active_delay = 5s;
+const std::chrono::milliseconds default_focus_delay  = 1s;
 
 // monitoring writes processes that have a window. among identical processes writes the oldest.
 std::vector<apptime::process> filtered_windows() {
@@ -44,7 +47,7 @@ apptime::record build_record(const apptime::process &proc, bool focused = false)
 }
 
 namespace apptime {
-monitoring::monitoring(database &db) : db_{db}, active_delay{5s}, focus_delay{1s}, running_{false} {}
+monitoring::monitoring(database &db) : db_{db}, active_delay{default_active_delay}, focus_delay{default_focus_delay}, running_{false} {}
 
 monitoring::~monitoring() {
     stop();
@@ -81,8 +84,8 @@ void monitoring::active_thread() {
             })) {
             return;
         }
-        for (const auto &v: filtered_windows()) {
-            db_.add_active(build_record(v));
+        for (const auto &proc: filtered_windows()) {
+            db_.add_active(build_record(proc));
         }
     }
 }

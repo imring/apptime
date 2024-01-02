@@ -1,15 +1,15 @@
 #include "window.hpp"
 
+#include <QCloseEvent>
+#include <QCoreApplication>
+#include <QFormLayout>
 #include <QFrame>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMenuBar>
 #include <QSettings>
 #include <QTableView>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QCloseEvent>
-#include <QFormLayout>
-#include <QCoreApplication>
 
 #include "ignore.hpp"
 
@@ -19,10 +19,10 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
     setWindowIcon(icon);
 
     // interface setup
-    QWidget *wid = new QWidget{this};
-    setCentralWidget(wid);
-    QVBoxLayout *vbox = new QVBoxLayout;
-    wid->setLayout(vbox);
+    auto *central_widget = new QWidget{this};
+    setCentralWidget(central_widget);
+    auto *vbox = new QVBoxLayout;
+    central_widget->setLayout(vbox);
 
     addOptionalWidgets();
     addSeparator();
@@ -61,15 +61,15 @@ void window::toggle() {
 
 void window::addMenubar() {
     // File
-    QMenu   *file_menu    = menuBar()->addMenu(tr("&File"));
-    QAction *close_action = new QAction{"&Close", this};
+    QMenu *file_menu    = menuBar()->addMenu(tr("&File"));
+    auto  *close_action = new QAction{"&Close", this};
     file_menu->addAction(close_action);
 
     // View
     QMenu *view_menu = menuBar()->addMenu(tr("&View"));
 
     // _ Focused only
-    QAction *toggle_focus = new QAction{"&Focused only", this};
+    auto *toggle_focus = new QAction{"&Focused only", this};
     toggle_focus->setCheckable(true);
     toggle_focus->setChecked(focus_widget_->checkState() != Qt::Unchecked);
     view_menu->addAction(toggle_focus);
@@ -86,11 +86,11 @@ void window::addMenubar() {
 
     // Ignore list...
     view_menu->addSeparator();
-    QAction *ignore_list = new QAction{"&Ignore list...", this};
+    auto *ignore_list = new QAction{"&Ignore list...", this};
     view_menu->addAction(ignore_list);
 
     // slots
-    connect(close_action, &QAction::triggered, &QCoreApplication::exit);
+    connect(close_action, &QAction::triggered, this, &QWidget::close);
     connect(toggle_focus, &QAction::triggered, focus_widget_, &QAbstractButton::toggle);
     connect(focus_widget_, &QCheckBox::stateChanged, [toggle_focus](int state) {
         toggle_focus->setChecked(state != Qt::Unchecked);
@@ -109,8 +109,8 @@ void window::addMenubar() {
 }
 
 void window::addOptionalWidgets() {
-    const auto   main_layout   = static_cast<QVBoxLayout *>(centralWidget()->layout());
-    QFormLayout *option_layout = new QFormLayout;
+    auto *main_layout   = qobject_cast<QVBoxLayout *>(centralWidget()->layout());
+    auto *option_layout = new QFormLayout;
 
     // Filter by: ____
     filter_widget_ = new QComboBox;
@@ -133,7 +133,7 @@ void window::addOptionalWidgets() {
 }
 
 void window::addSeparator() {
-    QFrame *line = new QFrame;
+    auto *line = new QFrame;
     line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
 
@@ -171,14 +171,13 @@ void window::updateRecords() {
         records = db_.actives(opt);
     }
 
-    const records::settings set{
-        .window_names = toggle_names_->isChecked(),
-        .icons = toggle_icons_->isChecked()
-    };
-    table_widget_->update(records, set);
+    records::settings settings = {};
+    settings.window_names      = toggle_names_->isChecked();
+    settings.icons             = toggle_icons_->isChecked();
+    table_widget_->update(records, settings);
 }
 
-QString window::getDateFormat(DateFormat format) const {
+QString window::getDateFormat(DateFormat format) {
     QString result;
     switch (format) {
     case DateFormat::Day:
@@ -199,12 +198,14 @@ QString window::getDateFormat(DateFormat format) const {
     return result;
 }
 
-window::DateFormat window::getDateFormat(QString format) const {
+window::DateFormat window::getDateFormat(QAnyStringView format) {
     if (format == "dd.MM.yyyy") {
         return DateFormat::Day;
-    } else if (format == "MM.yyyy") {
+    }
+    if (format == "MM.yyyy") {
         return DateFormat::Month;
-    } else if (format == "yyyy") {
+    }
+    if (format == "yyyy") {
         return DateFormat::Year;
     }
     return DateFormat::All;
@@ -257,9 +258,7 @@ void window::saveSettings() {
 // signals
 
 void window::updateFormat(int index) {
-    QSettings settings;
-
-    const DateFormat format = static_cast<DateFormat>(index);
+    const auto format = static_cast<DateFormat>(index);
     date_widget_->setDisplayFormat(getDateFormat(format));
     updateRecords();
 }

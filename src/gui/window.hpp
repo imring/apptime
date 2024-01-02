@@ -34,8 +34,8 @@ public slots:
 
 private:
     enum class DateFormat { Day, Month, Year, All };
-    QString getDateFormat(DateFormat format) const;
-    DateFormat getDateFormat(QString format) const;
+    static QString getDateFormat(DateFormat format);
+    static DateFormat getDateFormat(QAnyStringView format) ;
 
     void addMenubar();
     void addOptionalWidgets();

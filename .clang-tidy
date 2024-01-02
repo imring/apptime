@@ -1,0 +1,33 @@
+---
+# TODO: enable modernize-pass-by-value?
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  misc-*,
+  bugprone-*,
+  cert-*,
+  google-*,
+  llvm-*,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -modernize-use-nodiscard,
+  -modernize-pass-by-value, 
+  -readability-implicit-bool-conversion,
+  -readability-isolate-declaration,
+  -misc-include-cleaner,
+  -google-build-using-namespace
+
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+CheckOptions:
+  readability-identifier-length.MinimumVariableNameLength: 2
+  readability-identifier-length.MinimumParameterNameLength: 2

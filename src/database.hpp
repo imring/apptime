@@ -109,14 +109,6 @@ private:
     std::vector<record> records_detail(std::string_view table, const options &opt) const;
 
     /**
-     * @brief Fills the records vector based on the provided SQLite statement.
-     *
-     * @param stmt The SQLite statement to execute.
-     * @return std::vector<record> A vector of filled records.
-     */
-    std::vector<record> fill_records(SQLite::Statement &stmt) const;
-
-    /**
      * @brief Validates whether the provided record is valid for insertion.
      *
      * This method checks if the provided record is valid for insertion into the database.
@@ -141,6 +133,14 @@ private:
      * @return true if the path is ignored, false otherwise.
      */
     bool is_ignored(const std::filesystem::path &path) const;
+
+    /**
+     * @brief Fills the records vector based on the provided SQLite statement.
+     *
+     * @param stmt The SQLite statement to execute.
+     * @return std::vector<record> A vector of filled records.
+     */
+    static std::vector<record> fill_records(SQLite::Statement &select);
 
     /**
      * @brief SQLite function for checking whether a path is ignored.

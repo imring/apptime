@@ -16,3 +16,4 @@ AllowShortLambdasOnASingleLine: Empty
 IndentRequires: true
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
+QualifierAlignment: Left

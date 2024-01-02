@@ -1,7 +1,7 @@
 #include "process.hpp"
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 #include <Windows.h>
 #include <psapi.h>
@@ -11,9 +11,9 @@
 
 class handle_deleter {
 public:
-    handle_deleter(HANDLE handle) : handle_{handle} {}
+    explicit handle_deleter(HANDLE handle) : handle_{handle} {}
     ~handle_deleter() {
-        if (handle_ != NULL) {
+        if (handle_ != nullptr) {
             CloseHandle(handle_);
         }
     }
@@ -22,11 +22,11 @@ private:
     HANDLE handle_;
 };
 
-std::chrono::system_clock::time_point filetime_to_chrono(const FILETIME &ft) {
+std::chrono::system_clock::time_point filetime_to_chrono(const FILETIME &filetime) {
     using namespace std::chrono;
 
     SYSTEMTIME st;
-    FileTimeToSystemTime(&ft, &st);
+    FileTimeToSystemTime(&filetime, &st);
 
     const auto date = year{st.wYear} / month{st.wMonth} / day{st.wDay};
     const auto time = sys_days{date} + hours{st.wHour} + minutes{st.wMinute} + seconds{st.wSecond} + milliseconds{st.wMilliseconds};
@@ -35,12 +35,12 @@ std::chrono::system_clock::time_point filetime_to_chrono(const FILETIME &ft) {
 
 // util function that allows to use lambda-expressions in EnumWindows
 BOOL CALLBACK enum_windows_cb(HWND hwnd, LPARAM lparam) {
-    const auto func = std::bit_cast<std::function<BOOL(HWND, LPARAM)> *>(lparam);
+    const auto *func = std::bit_cast<std::function<BOOL(HWND, LPARAM)> *>(lparam);
     return (*func)(hwnd, lparam);
 }
 
 int get_pid(HWND hwnd) {
-    DWORD process_id;
+    DWORD process_id; // NOLINT(cppcoreguidelines-init-variables)
     if (!GetWindowThreadProcessId(hwnd, &process_id)) {
         return -1;
     }
@@ -48,8 +48,8 @@ int get_pid(HWND hwnd) {
 }
 
 HWND get_hwnd(int pid) {
-    HWND                              result = NULL;
-    std::function<BOOL(HWND, LPARAM)> cb     = [&result, pid](HWND hwnd, LPARAM lParam) -> BOOL {
+    HWND                                    result   = nullptr;
+    const std::function<BOOL(HWND, LPARAM)> callback = [&result, pid](HWND hwnd, LPARAM /*lParam*/) -> BOOL {
         const int process_id = get_pid(hwnd);
         if (process_id != -1 && process_id == pid) {
             result = hwnd;
@@ -57,30 +57,26 @@ HWND get_hwnd(int pid) {
         }
         return TRUE;
     };
-    EnumWindows(enum_windows_cb, std::bit_cast<LPARAM>(&cb));
+    EnumWindows(enum_windows_cb, std::bit_cast<LPARAM>(&callback));
     return result;
 }
 
-#ifdef UNICODE
-#else
-#endif
-
 namespace apptime {
 bool process::exist() const {
-    const HANDLE   handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
-    handle_deleter hd{handle};
-    return handle != NULL;
+    HANDLE               handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
+    const handle_deleter hd{handle};
+    return handle != nullptr;
 }
 
 std::string process::window_name() const {
-    const HWND hwnd = get_hwnd(process_id_);
-    if (hwnd == NULL) {
+    HWND hwnd = get_hwnd(process_id_);
+    if (hwnd == nullptr) {
         return {};
     }
 
     // nvcontainer.exe doesn't allow SendMessage to be used, so a timer is set
     constexpr unsigned timeout = 100;
-    DWORD_PTR          length;
+    DWORD_PTR          length; // NOLINT(cppcoreguidelines-init-variables)
     if (!SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK, timeout, &length) || length <= 0) {
         return {};
     }
@@ -93,23 +89,23 @@ std::string process::window_name() const {
 }
 
 std::string process::full_path() const {
-    const HANDLE   handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id_);
-    handle_deleter hd{handle};
-    if (handle == NULL) {
+    HANDLE               handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id_);
+    const handle_deleter hd{handle};
+    if (handle == nullptr) {
         return {};
     }
 
     TCHAR path[MAX_PATH] = {};
-    if (GetModuleFileNameEx(handle, NULL, path, MAX_PATH) != 0) {
+    if (GetModuleFileNameEx(handle, nullptr, path, MAX_PATH) != 0) {
         return utf8_encode(path);
     }
     return {};
 }
 
 std::chrono::system_clock::time_point process::start() const {
-    HANDLE         handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
-    handle_deleter hd{handle};
-    if (handle == NULL) {
+    HANDLE               handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
+    const handle_deleter hd{handle};
+    if (handle == nullptr) {
         return {};
     }
 
@@ -123,42 +119,40 @@ std::chrono::system_clock::time_point process::start() const {
 // static
 
 std::vector<process> process::active_processes() {
-    const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
         return {};
     }
-    handle_deleter       hd{snapshot};
+    const handle_deleter hd{snapshot};
     std::vector<process> result;
 
     PROCESSENTRY32 entry = {};
     entry.dwSize         = sizeof(PROCESSENTRY32);
-    if (Process32First(snapshot, &entry)) {
-        do {
-            process p{static_cast<int>(entry.th32ProcessID)};
-            if (p.exist()) {
-                result.push_back(p);
-            }
-        } while (Process32Next(snapshot, &entry));
+    for (BOOL found = Process32First(snapshot, &entry); found; found = Process32Next(snapshot, &entry)) {
+        const process proc{static_cast<int>(entry.th32ProcessID)};
+        if (proc.exist()) {
+            result.push_back(proc);
+        }
     }
 
     return result;
 }
 
 std::vector<process> process::active_windows() {
-    std::vector<process>              result;
-    std::function<BOOL(HWND, LPARAM)> cb = [&result](HWND hwnd, LPARAM lParam) -> BOOL {
+    std::vector<process>                    result;
+    const std::function<BOOL(HWND, LPARAM)> callback = [&result](HWND hwnd, LPARAM /*lParam*/) -> BOOL {
         const int process_id = get_pid(hwnd);
         if (process_id != -1) {
-            result.push_back(process{process_id});
+            result.emplace_back(process_id);
         }
         return TRUE;
     };
-    EnumWindows(enum_windows_cb, std::bit_cast<LPARAM>(&cb));
+    EnumWindows(enum_windows_cb, std::bit_cast<LPARAM>(&callback));
     return result;
 }
 
 process process::focused_window() {
-    const HWND hwnd = GetForegroundWindow();
+    HWND hwnd = GetForegroundWindow();
     if (!hwnd) {
         return process{-1};
     }

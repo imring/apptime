@@ -1,11 +1,11 @@
 #include "ignore.hpp"
 
 #include <QComboBox>
-#include <QLineEdit>
-#include <QHeaderView>
-#include <QVBoxLayout>
-#include <QPushButton>
 #include <QFormLayout>
+#include <QHeaderView>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
 
 namespace apptime {
 ignore_window::ignore_window(QWidget *parent) : QWidget{parent}, table_widget_{new QTableWidget{this}} {
@@ -13,15 +13,15 @@ ignore_window::ignore_window(QWidget *parent) : QWidget{parent}, table_widget_{n
     setWindowTitle("Ignore list");
 
     // table
-    QVBoxLayout *vbox = new QVBoxLayout;
+    auto *vbox = new QVBoxLayout;
     setLayout(vbox);
     addTable();
 
     // buttons
-    QHBoxLayout *hbox = new QHBoxLayout;
-    QPushButton *add  = new QPushButton{"Add"};
+    auto *hbox = new QHBoxLayout;
+    auto *add  = new QPushButton{"Add"};
     hbox->addWidget(add);
-    QPushButton *remove = new QPushButton{"Remove"};
+    auto *remove = new QPushButton{"Remove"};
     hbox->addWidget(remove);
     vbox->addLayout(hbox);
 
@@ -31,7 +31,7 @@ ignore_window::ignore_window(QWidget *parent) : QWidget{parent}, table_widget_{n
 }
 
 void ignore_window::addTable() {
-    const auto main_layout = static_cast<QVBoxLayout *>(layout());
+    auto *main_layout = qobject_cast<QVBoxLayout *>(layout());
     main_layout->addWidget(table_widget_);
 
     table_widget_->verticalHeader()->hide();
@@ -52,13 +52,13 @@ void ignore_window::update(const std::vector<ignore> &list) {
 
     table_widget_->setRowCount(static_cast<int>(list.size()));
     for (int i = 0; i < list.size(); i++) {
-        const auto &v = list[i];
+        const auto &element = list[i];
 
-        QTableWidgetItem *type = new QTableWidgetItem{QString::fromStdString(v.first == ignore_file ? "File" : "Path")};
+        auto *type = new QTableWidgetItem{QString::fromStdString(element.first == ignore_file ? "File" : "Path")};
         type->setFlags(type->flags() & ~Qt::ItemIsEditable);
         table_widget_->setItem(i, 0, type);
 
-        QTableWidgetItem *path = new QTableWidgetItem{QString::fromStdString(v.second)};
+        auto *path = new QTableWidgetItem{QString::fromStdString(element.second)};
         path->setFlags(path->flags() & ~Qt::ItemIsEditable);
         table_widget_->setItem(i, 1, path);
     }
@@ -69,20 +69,20 @@ void ignore_window::update(const std::vector<ignore> &list) {
 
 void ignore_window::openAddDialog() {
     if (!dialog_add_) {
-        dialog_add_         = new QDialog{this};
-        QFormLayout *layout = new QFormLayout{dialog_add_};
+        dialog_add_  = new QDialog{this};
+        auto *layout = new QFormLayout{dialog_add_};
 
-        QComboBox *type_combo = new QComboBox{dialog_add_};
+        auto *type_combo = new QComboBox{dialog_add_};
         type_combo->addItem("Path");
         type_combo->addItem("File");
-        QLineEdit *path_edit = new QLineEdit{dialog_add_};
+        auto *path_edit = new QLineEdit{dialog_add_};
 
         layout->addRow("Select a type:", type_combo);
         layout->addRow("Input a path:", path_edit);
 
-        QHBoxLayout *hbox   = new QHBoxLayout{dialog_add_};
-        QPushButton *ok     = new QPushButton{"OK", dialog_add_};
-        QPushButton *cancel = new QPushButton{"Cancel", dialog_add_};
+        auto *hbox   = new QHBoxLayout{dialog_add_};
+        auto *ok     = new QPushButton{"OK", dialog_add_};
+        auto *cancel = new QPushButton{"Cancel", dialog_add_};
         hbox->addWidget(ok);
         hbox->addWidget(cancel);
         layout->addRow(hbox);
@@ -108,7 +108,7 @@ void ignore_window::removeSelected() {
         return;
     }
     const QModelIndexList rows = select->selectedRows();
-    if (rows.size() < 1 || rows.size() > list_.size()) {
+    if (rows.empty() || rows.size() > list_.size()) {
         return;
     }
 

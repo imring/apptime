@@ -9,12 +9,12 @@ QIcon application_icon(std::string_view path) {
         return {};
     }
     const tstring unicode_path = utf8_decode(path);
-    const HICON   icon         = ExtractIcon(nullptr, unicode_path.data(), 0);
+    HICON         icon         = ExtractIcon(nullptr, unicode_path.data(), 0);
     if (!icon) {
         return {};
     }
 
-    QPixmap pixmap = QPixmap::fromImage(QImage::fromHICON(icon));
+    const QPixmap pixmap = QPixmap::fromImage(QImage::fromHICON(icon));
     DestroyIcon(icon);
     return pixmap;
 }
