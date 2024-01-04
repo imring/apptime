@@ -34,9 +34,10 @@ std::chrono::system_clock::time_point filetime_to_chrono(const FILETIME &filetim
 }
 
 // util function that allows to use lambda-expressions in EnumWindows
+using enum_windows_t = std::function<BOOL(HWND)>;
 BOOL CALLBACK enum_windows_cb(HWND hwnd, LPARAM lparam) {
-    const auto *func = std::bit_cast<std::function<BOOL(HWND, LPARAM)> *>(lparam);
-    return (*func)(hwnd, lparam);
+    const auto *func = std::bit_cast<enum_windows_t *>(lparam);
+    return (*func)(hwnd);
 }
 
 int get_pid(HWND hwnd) {
@@ -48,8 +49,8 @@ int get_pid(HWND hwnd) {
 }
 
 HWND get_hwnd(int pid) {
-    HWND                                    result   = nullptr;
-    const std::function<BOOL(HWND, LPARAM)> callback = [&result, pid](HWND hwnd, LPARAM /*lParam*/) -> BOOL {
+    HWND                 result   = nullptr;
+    const enum_windows_t callback = [&result, pid](HWND hwnd) -> BOOL {
         const int process_id = get_pid(hwnd);
         if (process_id != -1 && process_id == pid) {
             result = hwnd;
@@ -139,8 +140,8 @@ std::vector<process> process::active_processes() {
 }
 
 std::vector<process> process::active_windows(bool only_visible) {
-    std::vector<process>                    result;
-    const std::function<BOOL(HWND, LPARAM)> callback = [&result, only_visible](HWND hwnd, LPARAM /*lParam*/) -> BOOL {
+    std::vector<process> result;
+    const enum_windows_t callback = [&result, only_visible](HWND hwnd) -> BOOL {
         if (only_visible && !IsWindowVisible(hwnd)) {
             return TRUE;
         }
