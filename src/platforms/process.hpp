@@ -64,10 +64,12 @@ public:
 
     /**
      * @brief Get a list of all active processes that have a window.
+     * 
+     * @param only_visible Get only visible windows.
      *
      * @return std::vector<process> A vector of active windows.
      */
-    static std::vector<process> active_windows();
+    static std::vector<process> active_windows(bool only_visible = false);
 
     /**
      * @brief Get a process that has a focused window.

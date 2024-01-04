@@ -138,9 +138,13 @@ std::vector<process> process::active_processes() {
     return result;
 }
 
-std::vector<process> process::active_windows() {
+std::vector<process> process::active_windows(bool only_visible) {
     std::vector<process>                    result;
-    const std::function<BOOL(HWND, LPARAM)> callback = [&result](HWND hwnd, LPARAM /*lParam*/) -> BOOL {
+    const std::function<BOOL(HWND, LPARAM)> callback = [&result, only_visible](HWND hwnd, LPARAM /*lParam*/) -> BOOL {
+        if (only_visible && !IsWindowVisible(hwnd)) {
+            return TRUE;
+        }
+
         const int process_id = get_pid(hwnd);
         if (process_id != -1) {
             result.emplace_back(process_id);

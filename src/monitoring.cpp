@@ -15,7 +15,7 @@ const std::chrono::milliseconds default_focus_delay  = 1s;
 // monitoring writes processes that have a window. among identical processes writes the oldest.
 std::vector<apptime::process> filtered_windows() {
     std::unordered_map<std::string, apptime::process> result;
-    for (const auto &win: apptime::process::active_windows()) {
+    for (const auto &win: apptime::process::active_windows(true)) {
         const std::string path = win.full_path();
         if (path.empty()) {
             continue;
