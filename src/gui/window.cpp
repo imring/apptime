@@ -95,15 +95,7 @@ void window::addMenubar() {
     connect(focus_widget_, &QCheckBox::stateChanged, [toggle_focus](int state) {
         toggle_focus->setChecked(state != Qt::Unchecked);
     });
-    connect(ignore_list, &QAction::triggered, [this]() {
-        if (!ignore_window_) {
-            ignore_window_ = new ignore_window{this};
-            connect(ignore_window_, &ignore_window::needToAdd, this, &window::addIgnore);
-            connect(ignore_window_, &ignore_window::needToRemove, this, &window::removeIgnore);
-        }
-        ignore_window_->update(db_.ignores());
-        ignore_window_->show();
-    });
+    connect(ignore_list, &QAction::triggered, this, &window::openIgnoreWindow);
     connect(toggle_names_, &QAction::triggered, this, &window::updateRecords);
     connect(toggle_icons_, &QAction::triggered, this, &window::updateRecords);
 }
@@ -261,6 +253,16 @@ void window::updateFormat(int index) {
     const auto format = static_cast<DateFormat>(index);
     date_widget_->setDisplayFormat(getDateFormat(format));
     updateRecords();
+}
+
+void window::openIgnoreWindow() {
+    if (!ignore_window_) {
+        ignore_window_ = new ignore_window{this};
+        connect(ignore_window_, &ignore_window::needToAdd, this, &window::addIgnore);
+        connect(ignore_window_, &ignore_window::needToRemove, this, &window::removeIgnore);
+    }
+    ignore_window_->update(db_.ignores());
+    ignore_window_->show();
 }
 
 void window::addIgnore(ignore_type type, std::string_view path) {

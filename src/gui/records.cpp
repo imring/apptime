@@ -98,20 +98,19 @@ void records::showContextMenu(const QPoint &pos) {
     auto *ignore = new QAction{"Ignore the application"};
     contextMenu_->addAction(ignore);
 
-    const QAction *action = contextMenu_->exec(mapToGlobal(pos));
-    if (!action) {
-        return;
-    }
-
-    if (action == copy_path) {
+    connect(copy_path, &QAction::triggered, [this, item]() {
         const std::string &text = list_[item->row()].path;
         QGuiApplication::clipboard()->setText(QString::fromStdString(text));
-    } else if (action == copy_name) {
+    });
+    connect(copy_name, &QAction::triggered, [this, item]() {
         const std::string &text = list_[item->row()].name;
         QGuiApplication::clipboard()->setText(QString::fromStdString(text));
-    } else if (action == ignore) {
+    });
+    connect(ignore, &QAction::triggered, [this, item]() {
         const std::string &path = list_[item->row()].path;
         emit               addIgnore(ignore_file, path);
-    }
+    });
+
+    contextMenu_->exec(mapToGlobal(pos));
 }
 } // namespace apptime

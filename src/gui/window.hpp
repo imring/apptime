@@ -29,6 +29,7 @@ public:
 
 public slots:
     void updateFormat(int index);
+    void openIgnoreWindow();
     void addIgnore(ignore_type type, std::string_view path);
     void removeIgnore(ignore_type type, std::string_view path);
 
