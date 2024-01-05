@@ -4,6 +4,7 @@ project(apptime)
 option(APPTIME_TEST "Enable testing." ON)
 
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 set(QT_VERSION 6)
 
 find_package(SQLite3 REQUIRED)

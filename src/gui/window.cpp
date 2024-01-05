@@ -15,7 +15,7 @@
 
 namespace apptime {
 window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monitor_{db_} {
-    const QIcon icon{"./icon.png"};
+    const QIcon icon{":/icon.png"};
     setWindowIcon(icon);
 
     // interface setup

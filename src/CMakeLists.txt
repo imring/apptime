@@ -34,3 +34,10 @@ target_compile_features(apptime PRIVATE cxx_std_20)
 if (WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
     set_property(TARGET apptime PROPERTY WIN32_EXECUTABLE true)
 endif()
+
+qt_add_resources(apptime "assets"
+    PREFIX "/"
+    BASE "../assets"
+    FILES
+        ../assets/icon.png
+)

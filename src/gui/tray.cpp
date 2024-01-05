@@ -11,7 +11,7 @@ QString status_text(bool running) {
 namespace apptime {
 tray::tray(QObject *parent) : QSystemTrayIcon{parent}, menu_{new QMenu{}} {
     const auto *win = qobject_cast<window *>(parent);
-    const QIcon icon{"./icon.png"};
+    const QIcon icon{":/icon.png"};
 
     setIcon(icon);
     setContextMenu(menu_);
