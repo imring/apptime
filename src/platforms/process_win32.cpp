@@ -48,13 +48,12 @@ int get_pid(HWND hwnd) {
     return static_cast<int>(process_id);
 }
 
-HWND get_hwnd(int pid) {
-    HWND                 result   = nullptr;
+std::vector<HWND> get_hwnds(int pid) {
+    std::vector<HWND>    result;
     const enum_windows_t callback = [&result, pid](HWND hwnd) -> BOOL {
         const int process_id = get_pid(hwnd);
         if (process_id != -1 && process_id == pid) {
-            result = hwnd;
-            return FALSE; // stop searching
+            result.push_back(hwnd);
         }
         return TRUE;
     };
@@ -70,23 +69,28 @@ bool process::exist() const {
 }
 
 std::string process::window_name() const {
-    HWND hwnd = get_hwnd(process_id_);
-    if (hwnd == nullptr) {
+    const std::vector<HWND> hwnds = get_hwnds(process_id_);
+    if (hwnds.empty()) {
         return {};
     }
 
-    // nvcontainer.exe doesn't allow SendMessage to be used, so a timer is set
-    constexpr unsigned timeout = 100;
-    DWORD_PTR          length; // NOLINT(cppcoreguidelines-init-variables)
-    if (!SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK, timeout, &length) || length <= 0) {
-        return {};
+    // see all windows linked to this process id
+    for (HWND hwnd: hwnds) {
+        // nvcontainer.exe doesn't allow SendMessage to be used, so a timer is set
+        constexpr unsigned timeout = 100;
+        DWORD_PTR          length; // NOLINT(cppcoreguidelines-init-variables)
+        if (!SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_BLOCK, timeout, &length) || length <= 0) {
+            continue;
+        }
+        tstring result(length + 1, '\0');
+        if (!SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, std::bit_cast<LPARAM>(result.data()), SMTO_BLOCK, timeout, &length) ||
+            length != result.size() - 1) {
+            continue;
+        }
+        result.pop_back(); // remove the last \0
+        return utf8_encode(result);
     }
-    tstring result(length + 1, '\0');
-    if (!SendMessageTimeout(hwnd, WM_GETTEXT, length + 1, std::bit_cast<LPARAM>(result.data()), SMTO_BLOCK, timeout, &length) || length != result.size() - 1) {
-        return {};
-    }
-    result.pop_back(); // remove the last \0
-    return utf8_encode(result);
+    return {};
 }
 
 std::string process::full_path() const {
