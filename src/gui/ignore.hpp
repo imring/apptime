@@ -25,6 +25,7 @@ public slots:
 
 private:
     void addTable();
+    void createAddDialog();
 
     QTableWidget *table_widget_ = nullptr;
     QDialog      *dialog_add_   = nullptr;

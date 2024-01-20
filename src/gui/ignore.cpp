@@ -69,33 +69,7 @@ void ignore_window::update(const std::vector<ignore> &list) {
 
 void ignore_window::openAddDialog() {
     if (!dialog_add_) {
-        dialog_add_  = new QDialog{this};
-        auto *layout = new QFormLayout{dialog_add_};
-
-        auto *type_combo = new QComboBox{dialog_add_};
-        type_combo->addItem("Path");
-        type_combo->addItem("File");
-        auto *path_edit = new QLineEdit{dialog_add_};
-
-        layout->addRow("Select a type:", type_combo);
-        layout->addRow("Input a path:", path_edit);
-
-        auto *hbox   = new QHBoxLayout{dialog_add_};
-        auto *ok     = new QPushButton{"OK", dialog_add_};
-        auto *cancel = new QPushButton{"Cancel", dialog_add_};
-        hbox->addWidget(ok);
-        hbox->addWidget(cancel);
-        layout->addRow(hbox);
-
-        dialog_add_->setLayout(layout);
-
-        connect(ok, &QPushButton::clicked, [this, type_combo, path_edit]() {
-            emit needToAdd(static_cast<ignore_type>(type_combo->currentIndex()), path_edit->text().toStdString());
-            type_combo->setCurrentIndex(0);
-            path_edit->setText("");
-            dialog_add_->close();
-        });
-        connect(cancel, &QPushButton::clicked, dialog_add_, &QDialog::close);
+        createAddDialog();
     }
 
     dialog_add_->open();
@@ -114,5 +88,35 @@ void ignore_window::removeSelected() {
 
     const int row = rows.first().row();
     emit      needToRemove(list_[row].first, list_[row].second);
+}
+
+void ignore_window::createAddDialog() {
+    dialog_add_  = new QDialog{this};
+    auto *layout = new QFormLayout{};
+
+    auto *type_combo = new QComboBox{};
+    type_combo->addItem("Path");
+    type_combo->addItem("File");
+    auto *path_edit = new QLineEdit{};
+
+    layout->addRow("Select a type:", type_combo);
+    layout->addRow("Input a path:", path_edit);
+
+    auto *hbox   = new QHBoxLayout{};
+    auto *ok     = new QPushButton{"OK"};
+    auto *cancel = new QPushButton{"Cancel"};
+    hbox->addWidget(ok);
+    hbox->addWidget(cancel);
+    layout->addRow(hbox);
+
+    dialog_add_->setLayout(layout);
+
+    connect(ok, &QPushButton::clicked, [this, type_combo, path_edit]() {
+        emit needToAdd(static_cast<ignore_type>(type_combo->currentIndex()), path_edit->text().toStdString());
+        type_combo->setCurrentIndex(0);
+        path_edit->setText("");
+        dialog_add_->close();
+    });
+    connect(cancel, &QPushButton::clicked, dialog_add_, &QDialog::close);
 }
 } // namespace apptime
