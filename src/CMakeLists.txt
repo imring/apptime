@@ -38,6 +38,10 @@ endif()
 qt_add_resources(apptime "assets"
     PREFIX "/"
     BASE "../assets"
-    FILES
-        ../assets/icon.png
+    FILES ../assets/icon.png
+)
+qt_add_resources(apptime "styles"
+    PREFIX "/"
+    BASE "gui"
+    FILES gui/styles/records.qss
 )

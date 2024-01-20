@@ -25,7 +25,6 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
     central_widget->setLayout(vbox);
 
     addOptionalWidgets();
-    addSeparator();
     addResults();
     addMenubar();
 
@@ -37,7 +36,7 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
     monitor_.start();
 
     // add slots
-    connect(table_widget_, &records::addIgnore, this, &window::addIgnore);
+    connect(table_widget_, &table_records::addIgnore, this, &window::addIgnore);
 }
 
 void window::closeEvent(QCloseEvent *event) {
@@ -124,16 +123,8 @@ void window::addOptionalWidgets() {
     connect(focus_widget_, &QCheckBox::stateChanged, this, &window::updateRecords);
 }
 
-void window::addSeparator() {
-    auto *line = new QFrame;
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-
-    centralWidget()->layout()->addWidget(line);
-}
-
 void window::addResults() {
-    table_widget_ = new records;
+    table_widget_ = new table_records;
     centralWidget()->layout()->addWidget(table_widget_);
 }
 
@@ -163,9 +154,9 @@ void window::updateRecords() {
         records = db_.actives(opt);
     }
 
-    records::settings settings = {};
-    settings.window_names      = toggle_names_->isChecked();
-    settings.icons             = toggle_icons_->isChecked();
+    table_records::settings settings = {};
+    settings.window_names            = toggle_names_->isChecked();
+    settings.icons                   = toggle_icons_->isChecked();
     table_widget_->update(records, settings);
 }
 

@@ -2,8 +2,11 @@
 
 #include <algorithm>
 #include <format>
+#include <ranges>
+#include <set>
 
 #include <QClipboard>
+#include <QFile>
 #include <QGuiApplication>
 #include <QHeaderView>
 #include <QMenu>
@@ -18,7 +21,7 @@ std::string application_name(const apptime::record &app, bool window_names = fal
     return path.filename().string();
 }
 
-apptime::records::app_duration_t total_duration(const apptime::record &app) {
+apptime::table_records::app_duration_t total_duration(const apptime::record &app) {
     using namespace std::chrono;
 
     system_clock::duration result{};
@@ -29,34 +32,52 @@ apptime::records::app_duration_t total_duration(const apptime::record &app) {
 }
 
 auto convert_actives(const std::vector<apptime::record> &apps, bool window_names = false) {
-    std::vector<apptime::records::table_info> result;
-
-    result.reserve(apps.size());
-    std::ranges::transform(apps, std::back_inserter(result), [window_names](const apptime::record &app) {
-        return apptime::records::table_info{app.path, application_name(app, window_names), total_duration(app)};
-    });
-    std::ranges::sort(result, [](const apptime::records::table_info &left, const apptime::records::table_info &right) {
+    // std::set is needed here for sorting applications
+    const auto comp = [](const apptime::table_records::table_info &left, const apptime::table_records::table_info &right) {
         return left.duration.to_duration() > right.duration.to_duration();
-    });
+    };
+    std::set<apptime::table_records::table_info, decltype(comp)> result{comp};
+
+    for (const auto &app: apps) {
+        result.emplace(app.path, application_name(app, window_names), total_duration(app));
+    }
+    return std::vector<apptime::table_records::table_info>{result.begin(), result.end()};
+}
+
+// format the duration to 999h 59m 59s
+std::string duration_format(const apptime::table_records::app_duration_t &duration) {
+    std::string result;
+
+    const auto hours   = duration.hours().count();
+    const auto minutes = duration.minutes().count();
+    const auto seconds = duration.seconds().count();
+    if (hours) {
+        std::format_to(std::back_inserter(result), "{:d}h ", hours);
+    }
+    if (minutes) {
+        std::format_to(std::back_inserter(result), "{:d}m ", minutes);
+    }
+    std::format_to(std::back_inserter(result), "{:d}s", seconds);
     return result;
 }
 
 namespace apptime {
-records::records(QWidget *parent) : QTableWidget{parent}, contextMenu_{new QMenu{"Context menu", this}} {
+table_records::table_records(QWidget *parent) : QTableWidget{parent}, contextMenu_{new QMenu{"Context menu", this}} {
+    setShowGrid(false);
     verticalHeader()->hide();
-    setSelectionMode(QAbstractItemView::NoSelection);
+    setSelectionBehavior(QAbstractItemView::SelectItems);
+    setSelectionMode(QAbstractItemView::SingleSelection);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    loadStyle();
 
     setColumnCount(2);
-    QStringList header;
-    header << "Name"
-           << "Time";
-    setHorizontalHeaderLabels(header);
+    setHorizontalHeaderLabels({"Using time", " "});
+    horizontalHeaderItem(0)->setTextAlignment(Qt::AlignmentFlag::AlignLeft | Qt::AlignmentFlag::AlignVCenter);
 
-    connect(this, &QTableWidget::customContextMenuRequested, this, &records::showContextMenu);
+    connect(this, &QTableWidget::customContextMenuRequested, this, &table_records::showContextMenu);
 }
 
-void records::update(const std::vector<record> &apps, const settings &set) {
+void table_records::update(const std::vector<record> &apps, const settings &set) {
     clearContents();
 
     list_ = convert_actives(apps, set.window_names);
@@ -71,10 +92,10 @@ void records::update(const std::vector<record> &apps, const settings &set) {
             name->setIcon(application_icon(element.path));
         }
 
-        const std::string total_str =
-            std::format("{:02d}:{:02d}:{:02d}", element.duration.hours().count(), element.duration.minutes().count(), element.duration.seconds().count());
-        auto *duration = new QTableWidgetItem{QString::fromStdString(total_str)};
+        const std::string total_str = duration_format(element.duration);
+        auto             *duration  = new QTableWidgetItem{QString::fromStdString(total_str)};
         duration->setFlags(duration->flags() & ~Qt::ItemIsEditable);
+        duration->setTextAlignment(Qt::AlignmentFlag::AlignRight | Qt::AlignmentFlag::AlignVCenter);
         setItem(i, 1, duration);
     }
 
@@ -82,9 +103,9 @@ void records::update(const std::vector<record> &apps, const settings &set) {
     horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 }
 
-void records::showContextMenu(const QPoint &pos) {
+void table_records::showContextMenu(const QPoint &pos) {
     contextMenu_->clear();
-    QTableWidgetItem *item = itemAt(pos);
+    const QTableWidgetItem *item = itemAt(pos);
     if (!item) {
         return;
     }
@@ -112,5 +133,13 @@ void records::showContextMenu(const QPoint &pos) {
     });
 
     contextMenu_->exec(mapToGlobal(pos));
+}
+
+void table_records::loadStyle() {
+    QFile style_file{":/styles/records.qss"};
+    style_file.open(QFile::ReadOnly);
+
+    const QString style{style_file.readAll()};
+    setStyleSheet(style);
 }
 } // namespace apptime

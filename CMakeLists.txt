@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(apptime)
+project(apptime VERSION 0.10)
 
 option(APPTIME_TEST "Enable testing." ON)
 

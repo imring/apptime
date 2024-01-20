@@ -10,10 +10,6 @@
 #include "records.hpp"
 #include "ignore.hpp"
 
-// TODO:
-// - app histogram;
-// - style?
-
 namespace apptime {
 class window : public QMainWindow {
     Q_OBJECT
@@ -35,8 +31,8 @@ public slots:
 
 private:
     enum class DateFormat { Day, Month, Year, All };
-    static QString getDateFormat(DateFormat format);
-    static DateFormat getDateFormat(QAnyStringView format) ;
+    static QString    getDateFormat(DateFormat format);
+    static DateFormat getDateFormat(QAnyStringView format);
 
     void addMenubar();
     void addOptionalWidgets();
@@ -48,10 +44,10 @@ private:
 
     void updateRecords();
 
-    QCheckBox *focus_widget_  = nullptr;
-    QComboBox *filter_widget_ = nullptr;
-    QDateEdit *date_widget_   = nullptr;
-    records   *table_widget_  = nullptr;
+    QCheckBox     *focus_widget_  = nullptr;
+    QComboBox     *filter_widget_ = nullptr;
+    QDateEdit     *date_widget_   = nullptr;
+    table_records *table_widget_  = nullptr;
 
     QAction *toggle_names_ = nullptr;
     QAction *toggle_icons_ = nullptr;

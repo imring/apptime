@@ -8,7 +8,7 @@
 #include "../database.hpp"
 
 namespace apptime {
-class records : public QTableWidget {
+class table_records : public QTableWidget {
     Q_OBJECT
 
 public:
@@ -26,17 +26,20 @@ public:
         bool icons;
     };
 
-    records(QWidget *parent = nullptr);
+    table_records(QWidget *parent = nullptr);
 
     void update(const std::vector<record> &apps, const settings &set = {});
 
 signals:
     void addIgnore(ignore_type type, std::string_view path);
 
-private:
+private slots:
     void showContextMenu(const QPoint &pos);
 
-    QMenu                  *contextMenu_;
+private:
+    void loadStyle();
+
+    QMenu                  *contextMenu_ = nullptr;
     std::vector<table_info> list_;
 };
 } // namespace apptime

@@ -1,0 +1,21 @@
+QTableWidget {
+    border-radius: 5px;
+    border: 5px solid #fff;
+}
+
+QHeaderView::section {
+    border: none;
+    background-color: #fff;
+} 
+
+QTableWidget::item {
+    border-top: 1px solid #f0f0f0;
+}
+
+QTableWidget::item:hover {
+    background-color: #ddd;
+}
+
+QTableWidget::item:focus {
+    background-color: #aaa;
+}
