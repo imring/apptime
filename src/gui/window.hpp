@@ -7,8 +7,8 @@
 #include <QMainWindow>
 
 #include "../monitoring.hpp"
-#include "records.hpp"
 #include "ignore.hpp"
+#include "widgets/records.hpp"
 
 namespace apptime {
 class window : public QMainWindow {

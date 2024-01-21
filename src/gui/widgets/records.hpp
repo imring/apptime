@@ -5,7 +5,7 @@
 
 #include <QTableWidget>
 
-#include "../database.hpp"
+#include "../../database.hpp"
 
 namespace apptime {
 class table_records : public QTableWidget {

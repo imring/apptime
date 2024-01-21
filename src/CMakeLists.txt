@@ -1,6 +1,6 @@
 add_executable(apptime
+    gui/widgets/records.cpp
     gui/ignore.cpp
-    gui/records.cpp
     gui/tray.cpp
     gui/window.cpp
 
