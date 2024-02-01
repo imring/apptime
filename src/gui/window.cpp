@@ -29,7 +29,8 @@ window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monit
     addMenubar();
 
     // initial update
-    readSettings();
+    settings_window_ = new settings_window{this}; // NOLINT(cppcoreguidelines-prefer-member-initializer)
+    settings_window_->readSettings();
     updateRecords();
 
     // monitor launch
@@ -47,7 +48,7 @@ void window::closeEvent(QCloseEvent *event) {
     }
 
     // close by program
-    saveSettings();
+    settings_window_->saveSettings();
 }
 
 void window::toggle() {
@@ -60,8 +61,10 @@ void window::toggle() {
 
 void window::addMenubar() {
     // File
-    QMenu *file_menu    = menuBar()->addMenu(tr("&File"));
-    auto  *close_action = new QAction{"&Close", this};
+    QMenu *file_menu       = menuBar()->addMenu(tr("&File"));
+    auto  *settings_action = new QAction{"&Settings", this};
+    file_menu->addAction(settings_action);
+    auto *close_action = new QAction{"&Close", this};
     file_menu->addAction(close_action);
 
     // View
@@ -89,6 +92,9 @@ void window::addMenubar() {
     view_menu->addAction(ignore_list);
 
     // slots
+    connect(settings_action, &QAction::triggered, [this] {
+        settings_window_->show();
+    });
     connect(close_action, &QAction::triggered, this, &QWidget::close);
     connect(toggle_focus, &QAction::triggered, focus_widget_, &QAbstractButton::toggle);
     connect(focus_widget_, &QCheckBox::stateChanged, [toggle_focus](int state) {
@@ -192,50 +198,6 @@ window::DateFormat window::getDateFormat(QAnyStringView format) {
         return DateFormat::Year;
     }
     return DateFormat::All;
-}
-
-void window::readSettings() {
-    QSettings settings;
-
-    // window
-    settings.beginGroup("window");
-    const auto geometry = settings.value("geometry", QByteArray{}).toByteArray();
-    if (!geometry.isEmpty()) {
-        restoreGeometry(geometry);
-    }
-    settings.endGroup();
-
-    // view
-    settings.beginGroup("view");
-    const auto focused_only = settings.value("focused_only", false).toBool();
-    focus_widget_->setCheckState(focused_only ? Qt::Checked : Qt::Unchecked);
-
-    const auto window_names = settings.value("window_names", true).toBool();
-    toggle_names_->setChecked(window_names);
-
-    const auto date_format = settings.value("date_format", static_cast<int>(DateFormat::Day)).toInt();
-    date_widget_->setDisplayFormat(getDateFormat(static_cast<DateFormat>(date_format)));
-
-    const auto show_icons = settings.value("show_icons", true).toBool();
-    toggle_icons_->setChecked(show_icons);
-    settings.endGroup();
-}
-
-void window::saveSettings() {
-    QSettings settings;
-
-    // window
-    settings.beginGroup("window");
-    settings.setValue("geometry", saveGeometry());
-    settings.endGroup();
-
-    // view
-    settings.beginGroup("view");
-    settings.setValue("focused_only", focus_widget_->checkState() == Qt::Checked);
-    settings.setValue("window_names", toggle_names_->isChecked());
-    settings.setValue("date_format", static_cast<int>(getDateFormat(date_widget_->displayFormat())));
-    settings.setValue("show_icons", toggle_icons_->isChecked());
-    settings.endGroup();
 }
 
 // signals

@@ -8,6 +8,7 @@
 
 #include "../monitoring.hpp"
 #include "ignore.hpp"
+#include "settings.hpp"
 #include "widgets/records.hpp"
 
 namespace apptime {
@@ -23,7 +24,7 @@ public:
         return monitor_.running();
     }
 
-public slots:
+private slots:
     void updateFormat(int index);
     void openIgnoreWindow();
     void addIgnore(ignore_type type, std::string_view path);
@@ -36,11 +37,7 @@ private:
 
     void addMenubar();
     void addOptionalWidgets();
-    void addSeparator();
     void addResults();
-
-    void readSettings();
-    void saveSettings();
 
     void updateRecords();
 
@@ -52,10 +49,13 @@ private:
     QAction *toggle_names_ = nullptr;
     QAction *toggle_icons_ = nullptr;
 
-    ignore_window *ignore_window_ = nullptr;
+    ignore_window   *ignore_window_   = nullptr;
+    settings_window *settings_window_ = nullptr;
 
     database   db_;
     monitoring monitor_;
+
+    friend class settings_window;
 };
 } // namespace apptime
 
