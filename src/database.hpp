@@ -2,8 +2,8 @@
 #define APPTIME_DATABASE_HPP
 
 #include <chrono>
-#include <optional>
 #include <filesystem>
+#include <optional>
 #include <string_view>
 
 #include <SQLiteCpp/SQLiteCpp.h>
@@ -41,7 +41,7 @@ public:
      *
      * @param path File path.
      */
-    database(const std::filesystem::path &path);
+    explicit database(const std::filesystem::path &path);
 
     /**
      * @brief Add an active record(s) to the database.

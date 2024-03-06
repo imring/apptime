@@ -1,9 +1,9 @@
 #ifndef APPTIME_PROCESS_HPP
 #define APPTIME_PROCESS_HPP
 
-#include <vector>
-#include <string>
 #include <chrono>
+#include <string>
+#include <vector>
 
 namespace apptime {
 /// @brief The class represent a system process and provides functionality to get information about it.
@@ -14,7 +14,7 @@ public:
      *
      * @param pid The process ID.
      */
-    process(int pid) : process_id_{pid} {}
+    explicit process(int pid) : process_id_{pid} {}
 
     /**
      * @brief Check if the process exists.

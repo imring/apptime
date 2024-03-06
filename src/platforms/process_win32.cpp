@@ -1,7 +1,6 @@
 #include "process.hpp"
 
 #include <functional>
-#include <memory>
 
 #include <Windows.h>
 #include <psapi.h>

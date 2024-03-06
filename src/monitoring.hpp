@@ -1,17 +1,17 @@
 #ifndef APPTIME_MONITORING_HPP
 #define APPTIME_MONITORING_HPP
 
-#include <mutex>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <mutex>
 
 #include "database.hpp"
 
 namespace apptime {
 class monitoring {
 public:
-    monitoring(database &db);
+    explicit monitoring(database &db);
     ~monitoring();
 
     void start();
@@ -19,7 +19,7 @@ public:
 
     bool running() const;
 
-    std::chrono::milliseconds active_delay, focus_delay;
+    std::chrono::milliseconds active_delay, focus_delay; // NOLINT
 
 private:
     void active_thread();
