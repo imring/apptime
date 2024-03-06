@@ -10,7 +10,6 @@
 #include <QSettings>
 #include <QTableView>
 #include <QVBoxLayout>
-#include <chrono>
 
 #include "ignore.hpp"
 
