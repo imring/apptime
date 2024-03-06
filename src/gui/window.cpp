@@ -10,6 +10,7 @@
 #include <QSettings>
 #include <QTableView>
 #include <QVBoxLayout>
+#include <chrono>
 
 #include "ignore.hpp"
 
@@ -140,14 +141,14 @@ void window::updateRecords() {
 
     apptime::database::options opt;
     switch (static_cast<DateFormat>(filter_widget_->currentIndex())) {
-    case DateFormat::Day:
-        opt.day = date.day();
-        [[fallthrough]];
-    case DateFormat::Month:
-        opt.month = date.month();
-        [[fallthrough]];
     case DateFormat::Year:
-        opt.year = date.year();
+        opt.date = std::chrono::year{date.year()};
+        break;
+    case DateFormat::Month:
+        opt.date = std::chrono::year{date.year()} / date.month();
+        break;
+    case DateFormat::Day:
+        opt.date = std::chrono::year{date.year()} / date.month() / date.day();
         break;
     default:
         break;

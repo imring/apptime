@@ -4,6 +4,7 @@
 #include <chrono>
 #include <filesystem>
 #include <optional>
+#include <variant>
 #include <string_view>
 
 #include <SQLiteCpp/SQLiteCpp.h>
@@ -32,8 +33,8 @@ class database {
 public:
     /// @brief Search parameters.
     struct options {
-        std::string        path;
-        std::optional<int> year, month, day;
+        std::string                                                                                           path;
+        std::variant<std::monostate, std::chrono::year, std::chrono::year_month, std::chrono::year_month_day> date;
     };
 
     /**

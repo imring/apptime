@@ -14,8 +14,6 @@ public:
         update();
     }
 
-    void update();
-
     std::string query() const {
         return query_;
     }
@@ -30,6 +28,8 @@ private:
     std::string logs_start() const;
     std::string logs_end() const;
     std::string where();
+
+    void update();
 
     // input
     std::string                table_name_;
@@ -49,7 +49,7 @@ void select_records::update() {
 }
 
 std::string select_records::logs_start() const {
-    if (!opts_.year) {
+    if (opts_.date.index() == 0) { // std::monostate
         return "logs.start";
     }
     return "CASE WHEN strftime(:date_format, logs.start) = :date_value THEN logs.start "
@@ -57,7 +57,7 @@ std::string select_records::logs_start() const {
 }
 
 std::string select_records::logs_end() const {
-    if (!opts_.year) {
+    if (opts_.date.index() == 0) { // std::monostate
         return "logs.start";
     }
     return "CASE WHEN strftime(:date_format, logs.end) = :date_value THEN logs.end "
@@ -65,32 +65,55 @@ std::string select_records::logs_end() const {
 }
 
 std::string select_records::where() {
+    struct date_info {
+        std::string format, value, start, next;
+    };
+
+    struct date_info_converter {
+        date_info operator()(std::chrono::year year) {
+            return {
+                .format = "%Y",
+                .value  = std::format("{:d}", static_cast<int>(year)),
+                .start  = "start of year",
+                .next   = "+1 year",
+            };
+        }
+
+        date_info operator()(std::chrono::year_month year_month) {
+            return {
+                .format = "%Y-%m",
+                .value  = std::format("{:d}-{:02d}", static_cast<int>(year_month.year()), static_cast<unsigned>(year_month.month())),
+                .start  = "start of month",
+                .next   = "+1 month",
+            };
+        }
+
+        date_info operator()(std::chrono::year_month_day year_month_day) {
+            return {
+                .format = "%Y-%m-%d",
+                .value  = std::format("{:d}-{:02d}-{:02d}", static_cast<int>(year_month_day.year()), static_cast<unsigned>(year_month_day.month()),
+                                      static_cast<unsigned>(year_month_day.day())),
+                .start  = "start of day",
+                .next   = "+1 day",
+            };
+        }
+
+        date_info operator()(std::monostate /*unused*/) {
+            return {};
+        }
+    };
+
     binds_.clear();
     std::string result = "WHERE 1";
 
     // day/month/year
-    std::string date_format, date_value, date_start, date_next;
-    if (opts_.day && opts_.month && opts_.year) {
-        date_format = "%Y-%m-%d";
-        date_value  = std::format("{:d}-{:02d}-{:02d}", opts_.year.value(), opts_.month.value(), opts_.day.value());
-        date_start  = "start of day";
-        date_next   = "+1 day";
-    } else if (opts_.month && opts_.year) {
-        date_format = "%Y-%m";
-        date_value  = std::format("{:d}-{:02d}", opts_.year.value(), opts_.month.value());
-        date_start  = "start of month";
-        date_next   = "+1 month";
-    } else if (opts_.year) {
-        date_format = "%Y";
-        date_value  = std::format("{:d}", opts_.year.value());
-        date_start  = "start of year";
-        date_next   = "+1 year";
-    }
-    if (!date_format.empty()) {
-        binds_.emplace(":date_format", date_format);
-        binds_.emplace(":date_value", date_value);
-        binds_.emplace(":date_start", date_start);
-        binds_.emplace(":date_next", date_next);
+    if (opts_.date.index() != 0) { // not std::monostate
+        const date_info info = std::visit(date_info_converter{}, opts_.date);
+
+        binds_.emplace(":date_format", info.format);
+        binds_.emplace(":date_value", info.value);
+        binds_.emplace(":date_start", info.start);
+        binds_.emplace(":date_next", info.next);
 
         std::format_to(std::back_inserter(result), " AND (strftime(:date_format, logs.start)=:date_value OR strftime(:date_format, logs.end)=:date_value)");
     }

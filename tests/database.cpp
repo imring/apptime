@@ -126,7 +126,7 @@ TEST_CASE("element search") {
         });
 
         apptime::database::options opt;
-        opt.year = static_cast<int>(y);
+        opt.date = y;
         REQUIRE(db.actives(opt).size() == assumed);
     }
 
@@ -147,8 +147,7 @@ TEST_CASE("element search") {
         });
 
         apptime::database::options opt;
-        opt.year  = static_cast<int>(ymd.year());
-        opt.month = static_cast<unsigned>(ymd.month());
+        opt.date = ym;
         REQUIRE(db.actives(opt).size() == assumed);
     }
 
@@ -167,9 +166,7 @@ TEST_CASE("element search") {
         });
 
         apptime::database::options opt;
-        opt.year  = static_cast<int>(ymd.year());
-        opt.month = static_cast<unsigned>(ymd.month());
-        opt.day   = static_cast<unsigned>(ymd.day());
+        opt.date = ymd;
         REQUIRE(db.actives(opt).size() == assumed);
     }
 
