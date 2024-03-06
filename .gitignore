@@ -40,3 +40,7 @@ build*/
 # IDE
 .idea
 .vscode
+
+# VSCode extensions
+.cache
+.codechecker

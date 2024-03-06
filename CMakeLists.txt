@@ -7,8 +7,6 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(QT_VERSION 6)
 
-find_package(SQLite3 REQUIRED)
-find_package(SQLiteCpp CONFIG REQUIRED)
 find_package(Qt${QT_VERSION} REQUIRED COMPONENTS Widgets)
 
 if(UNIX)

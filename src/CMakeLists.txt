@@ -1,3 +1,14 @@
+include(FetchContent)
+
+set(SQLITECPP_RUN_CPPLINT OFF)
+FetchContent_Declare(
+    SQLiteCpp
+
+    GIT_REPOSITORY https://github.com/SRombauts/SQLiteCpp.git
+    GIT_TAG        3.3.1
+)
+FetchContent_MakeAvailable(SQLiteCpp)
+
 add_executable(apptime
     gui/widgets/records.cpp
     gui/ignore.cpp
@@ -16,6 +27,7 @@ if(WIN32)
     target_sources(apptime PRIVATE platforms/process_win32.cpp)
 elseif(UNIX)
     target_link_libraries(apptime PRIVATE PkgConfig::PROCPS)
+    target_sources(apptime PRIVATE platforms/icon_unix.cpp)
     target_sources(apptime PRIVATE platforms/process_unix.cpp)
 endif()
 

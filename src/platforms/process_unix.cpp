@@ -87,7 +87,7 @@ std::vector<process> process::active_processes() {
     return result;
 }
 
-std::vector<process> process::active_windows() {
+std::vector<process> process::active_windows(bool only_visible) {
     return active_processes();
 }
 

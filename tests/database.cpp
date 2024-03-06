@@ -55,9 +55,9 @@ std::vector<apptime::record> random_processes(int size) {
         date.tm_mday = random(1, 28);
         date.tm_hour = 12;
 
-        const auto diff  = seconds{random(0LL, duration_cast<seconds>(3h).count())}; // from 0 seconds to 3 hours in seconds
-        const auto end   = system_clock::from_time_t(std::mktime(&date));
-        const auto start = system_clock::time_point{end.time_since_epoch() - diff};
+        const seconds                  diff{static_cast<seconds::rep>(random(0, 3 * 60 * 60))}; // from 0 seconds to 3 hours in seconds
+        const system_clock::time_point end = system_clock::from_time_t(std::mktime(&date));
+        const system_clock::time_point start{end.time_since_epoch() - diff};
         v.times.emplace_back(start, end);
     }
     return result;

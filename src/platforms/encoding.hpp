@@ -22,4 +22,4 @@ inline std::string utf8_decode(std::string_view str) {
 #endif
 } // namespace apptime
 
-#endif APPTIME_ENCODING_HPP
+#endif // APPTIME_ENCODING_HPP
