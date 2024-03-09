@@ -15,7 +15,7 @@ namespace apptime {
 class window : public QMainWindow {
     Q_OBJECT
 public:
-    window(QWidget *parent = nullptr);
+    explicit window(QWidget *parent = nullptr);
 
     void closeEvent(QCloseEvent *event) override;
 
@@ -52,8 +52,8 @@ private:
     ignore_window   *ignore_window_   = nullptr;
     settings_window *settings_window_ = nullptr;
 
-    database   db_;
-    monitoring monitor_;
+    std::shared_ptr<database> db_;
+    monitoring                monitor_;
 
     friend class settings_window;
 };

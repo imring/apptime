@@ -6,12 +6,12 @@
 #include <condition_variable>
 #include <mutex>
 
-#include "database.hpp"
+#include "database/database.hpp"
 
 namespace apptime {
 class monitoring {
 public:
-    explicit monitoring(database &db);
+    explicit monitoring(std::shared_ptr<database> db);
     ~monitoring();
 
     void start();
@@ -28,9 +28,9 @@ private:
     std::thread active_thread_;
     std::thread focus_thread_;
 
-    database        &db_;
-    std::mutex       mutex_;
-    std::atomic_bool running_;
+    std::shared_ptr<database> db_;
+    std::mutex                mutex_;
+    std::atomic_bool          running_;
 
     std::condition_variable cv;
 };

@@ -11,10 +11,11 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
+#include "database/database_sqlite.hpp"
 #include "ignore.hpp"
 
 namespace apptime {
-window::window(QWidget *parent) : QMainWindow{parent}, db_{"./result.db"}, monitor_{db_} {
+window::window(QWidget *parent) : QMainWindow{parent}, db_{std::make_shared<database_sqlite>("./result.db")}, monitor_{db_} {
     const QIcon icon{":/icon.png"};
     setWindowIcon(icon);
 
@@ -155,9 +156,9 @@ void window::updateRecords() {
 
     std::vector<apptime::record> records;
     if (focused) {
-        records = db_.focuses(opt);
+        records = db_->focuses(opt);
     } else {
-        records = db_.actives(opt);
+        records = db_->actives(opt);
     }
 
     table_records::settings settings = {};
@@ -214,23 +215,23 @@ void window::openIgnoreWindow() {
         connect(ignore_window_, &ignore_window::needToAdd, this, &window::addIgnore);
         connect(ignore_window_, &ignore_window::needToRemove, this, &window::removeIgnore);
     }
-    ignore_window_->update(db_.ignores());
+    ignore_window_->update(db_->ignores());
     ignore_window_->show();
 }
 
 void window::addIgnore(ignore_type type, std::string_view path) {
-    db_.add_ignore(type, path);
+    db_->add_ignore(type, path);
     updateRecords();
     if (ignore_window_) {
-        ignore_window_->update(db_.ignores());
+        ignore_window_->update(db_->ignores());
     }
 }
 
 void window::removeIgnore(ignore_type type, std::string_view path) {
-    db_.remove_ignore(type, path);
+    db_->remove_ignore(type, path);
     updateRecords();
     if (ignore_window_) {
-        ignore_window_->update(db_.ignores());
+        ignore_window_->update(db_->ignores());
     }
 }
 } // namespace apptime

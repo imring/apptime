@@ -10,7 +10,7 @@
 
 #include "utils.hpp"
 
-#include "database.hpp"
+#include "database/database_sqlite.hpp"
 
 using namespace std::chrono;
 using namespace std::chrono_literals;
@@ -75,7 +75,7 @@ std::vector<apptime::record> random_processes(int size) {
 }
 
 TEST_CASE("element addition") {
-    apptime::database db{test_paths.ele_add};
+    apptime::database_sqlite db{test_paths.ele_add};
 
     SECTION("add an active element") {
         const apptime::record &element_test = processes.front();
@@ -112,13 +112,13 @@ TEST_CASE("element addition") {
 }
 
 TEST_CASE("element search") {
-    apptime::database db{test_paths.ele_search};
+    apptime::database_sqlite db{test_paths.ele_search};
 
     SECTION("add all elements") {
         for (const auto &val: processes) {
             REQUIRE(db.add_active(val));
         }
-        REQUIRE(db.actives().size() == processes.size());
+        REQUIRE(db.actives({}).size() == processes.size());
     }
 
     SECTION("search by year") {

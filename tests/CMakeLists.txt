@@ -19,8 +19,8 @@ function(new_test name files)
     catch_discover_tests(${name})
 endfunction()
 
-# database
-add_library(database ../src/database.cpp)
+# database (integration test)
+add_library(database ../src/database/database_sqlite.cpp)
 target_include_directories(database PUBLIC ../src/)
 target_compile_features(database PUBLIC cxx_std_20)
 target_link_libraries(database PUBLIC SQLiteCpp SQLite::SQLite3)

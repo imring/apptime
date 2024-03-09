@@ -1,48 +1,19 @@
-#ifndef APPTIME_DATABASE_HPP
-#define APPTIME_DATABASE_HPP
+#ifndef APPTIME_DATABASE_SQLITE_HPP
+#define APPTIME_DATABASE_SQLITE_HPP
 
-#include <chrono>
-#include <filesystem>
-#include <optional>
-#include <variant>
-#include <string_view>
-
-#include <SQLiteCpp/SQLiteCpp.h>
+#include "database.hpp"
 
 namespace apptime {
-/// @brief A structure with application-specific activities.
-struct record {
-    using time_point_t = std::chrono::system_clock::time_point;
-    using times_t      = std::vector<std::pair<time_point_t, time_point_t>>;
-
-    std::string path, name;
-    times_t     times;
-};
-
-/// @brief Types of ignoring
-enum ignore_type {
-    invalid = -1,
-    /// @brief Ignores primary and child paths.
-    ignore_path,
-    /// @brief Ignores a specific application.
-    ignore_file
-};
-using ignore = std::pair<ignore_type, std::string>;
-
-class database {
+class database_sqlite : public database {
 public:
-    /// @brief Search parameters.
-    struct options {
-        std::string                                                                                           path;
-        std::variant<std::monostate, std::chrono::year, std::chrono::year_month, std::chrono::year_month_day> date;
-    };
-
     /**
      * @brief Construct a new database object.
      *
      * @param path File path.
      */
-    explicit database(const std::filesystem::path &path);
+    explicit database_sqlite(const std::filesystem::path &path);
+
+    ~database_sqlite() override = default;
 
     /**
      * @brief Add an active record(s) to the database.
@@ -50,7 +21,7 @@ public:
      * @param rec The active record to add.
      * @return true if the addition is successful, false otherwise.
      */
-    bool add_active(const record &rec);
+    bool add_active(const record &rec) override;
 
     /**
      * @brief Add a focus record(s) to the database.
@@ -58,7 +29,7 @@ public:
      * @param rec The focus record to add.
      * @return true if the addition is successful, false otherwise.
      */
-    bool add_focus(const record &rec);
+    bool add_focus(const record &rec) override;
 
     /**
      * @brief Add an entry to the ignore list.
@@ -66,7 +37,7 @@ public:
      * @param type The type of ignoring (file or path).
      * @param value The value to be ignored.
      */
-    void add_ignore(ignore_type type, std::string_view value);
+    void add_ignore(ignore_type type, std::string_view value) override;
 
     /**
      * @brief Remove an entry from the ignore list.
@@ -74,7 +45,7 @@ public:
      * @param type The type of ignoring (file or path).
      * @param value The value to be removed from the ignore list.
      */
-    void remove_ignore(ignore_type type, std::string_view value);
+    void remove_ignore(ignore_type type, std::string_view value) override;
 
     /**
      * @brief Retrieves a list of active records based on the provided options.
@@ -82,7 +53,7 @@ public:
      * @param opt The search options.
      * @return std::vector<record> A vector of active records.
      */
-    std::vector<record> actives(const options &opt = {}) const;
+    std::vector<record> actives(const options &opt) const override;
 
     /**
      * @brief Retrieves a list of focus records based on the provided options.
@@ -90,14 +61,14 @@ public:
      * @param opt The search options.
      * @return std::vector<record> A vector of focus records.
      */
-    std::vector<record> focuses(const options &opt = {}) const;
+    std::vector<record> focuses(const options &opt) const override;
 
     /**
      * @brief Retrieves the current ignore list.
      *
      * @return std::vector<ignore> A vector of ignore entries.
      */
-    std::vector<ignore> ignores() const;
+    std::vector<ignore> ignores() const override;
 
 private:
     /**
@@ -157,4 +128,4 @@ private:
 };
 } // namespace apptime
 
-#endif // APPTIME_DATABASE_HPP
+#endif // APPTIME_DATABASE_SQLITE_HPP

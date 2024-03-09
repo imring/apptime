@@ -10,13 +10,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(SQLiteCpp)
 
 add_executable(apptime
+    database/database_sqlite.cpp
     gui/widgets/records.cpp
     gui/ignore.cpp
     gui/settings.cpp
     gui/tray.cpp
     gui/window.cpp
 
-    database.cpp
     main.cpp
     monitoring.cpp
 )

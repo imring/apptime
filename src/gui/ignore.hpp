@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QTableWidget>
 
-#include "../database.hpp"
+#include "database/database.hpp"
 
 namespace apptime {
 class ignore_window : public QWidget {

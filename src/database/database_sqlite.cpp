@@ -1,4 +1,4 @@
-#include "database.hpp"
+#include "database_sqlite.hpp"
 
 #include <unordered_map>
 
@@ -193,7 +193,7 @@ apptime::ignore_type string_to_enum(std::string_view value) {
 }
 
 namespace apptime {
-database::database(const std::filesystem::path &path) : db_{path.string(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE} {
+database_sqlite::database_sqlite(const std::filesystem::path &path) : db_{path.string(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE} {
     // create the applications table
     db_.exec("CREATE TABLE IF NOT EXISTS applications ("
              "id INTEGER NOT NULL,"
@@ -226,7 +226,7 @@ database::database(const std::filesystem::path &path) : db_{path.string(), SQLit
     db_.createFunction("IS_IGNORED", 1, false, this, &is_ignored_sqlite);
 }
 
-bool database::add_active(const record &rec) {
+bool database_sqlite::add_active(const record &rec) {
     if (!valid_application(rec)) {
         return false;
     }
@@ -252,7 +252,7 @@ bool database::add_active(const record &rec) {
     return result;
 }
 
-bool database::add_focus(const record &rec) {
+bool database_sqlite::add_focus(const record &rec) {
     if (!valid_application(rec)) {
         return false;
     }
@@ -278,7 +278,7 @@ bool database::add_focus(const record &rec) {
     return result;
 }
 
-void database::add_ignore(ignore_type type, std::string_view value) {
+void database_sqlite::add_ignore(ignore_type type, std::string_view value) {
     const std::string type_str = ignore_to_string(type);
     if (type_str.empty()) {
         return;
@@ -290,7 +290,7 @@ void database::add_ignore(ignore_type type, std::string_view value) {
     insert.exec();
 }
 
-void database::remove_ignore(ignore_type type, std::string_view value) {
+void database_sqlite::remove_ignore(ignore_type type, std::string_view value) {
     const std::string type_str = ignore_to_string(type);
     if (type_str.empty()) {
         return;
@@ -302,15 +302,15 @@ void database::remove_ignore(ignore_type type, std::string_view value) {
     remove.exec();
 }
 
-std::vector<record> database::actives(const options &opt) const {
+std::vector<record> database_sqlite::actives(const options &opt) const {
     return records_detail("active_logs", opt);
 }
 
-std::vector<record> database::focuses(const options &opt) const {
+std::vector<record> database_sqlite::focuses(const options &opt) const {
     return records_detail("focus_logs", opt);
 }
 
-std::vector<ignore> database::ignores() const {
+std::vector<ignore> database_sqlite::ignores() const {
     std::vector<ignore> result;
 
     using select_t = std::tuple<std::string, std::string>;
@@ -328,7 +328,7 @@ std::vector<ignore> database::ignores() const {
     return result;
 }
 
-std::vector<record> database::records_detail(std::string_view table, const options &opt) const {
+std::vector<record> database_sqlite::records_detail(std::string_view table, const options &opt) const {
     const select_records builder{table, opt};
     SQLite::Statement    select{db_, builder.query()};
     for (const auto &[key, value]: builder.binds()) {
@@ -337,7 +337,7 @@ std::vector<record> database::records_detail(std::string_view table, const optio
     return fill_records(select);
 }
 
-std::vector<record> database::fill_records(SQLite::Statement &select) {
+std::vector<record> database_sqlite::fill_records(SQLite::Statement &select) {
     using select_t = std::tuple<std::string, std::string, std::string, std::string>;
 
     std::vector<record> result;
@@ -366,7 +366,7 @@ std::vector<record> database::fill_records(SQLite::Statement &select) {
     return result;
 }
 
-bool database::valid_application(const record &rec) {
+bool database_sqlite::valid_application(const record &rec) {
     if (rec.path.empty() || is_ignored(rec.path)) {
         return false;
     }
@@ -378,7 +378,7 @@ bool database::valid_application(const record &rec) {
     return update.exec() == 1;
 }
 
-bool database::is_ignored(const fs::path &path) const {
+bool database_sqlite::is_ignored(const fs::path &path) const {
     for (const auto &[type, value]: ignores()) {
         switch (type) {
         case ignore_file:
@@ -398,7 +398,7 @@ bool database::is_ignored(const fs::path &path) const {
     return false;
 }
 
-void database::is_ignored_sqlite(sqlite3_context *context, int argc, sqlite3_value **argv) {
+void database_sqlite::is_ignored_sqlite(sqlite3_context *context, int argc, sqlite3_value **argv) {
     if (argc != 1) {
         sqlite3_result_error(context, "Wrong number of parameters (must be 1)", -1);
         return;
@@ -411,7 +411,7 @@ void database::is_ignored_sqlite(sqlite3_context *context, int argc, sqlite3_val
     }
 
     const std::string_view path(std::bit_cast<const char *>(text), size);
-    const auto            *self = static_cast<database *>(sqlite3_user_data(context));
+    const auto            *self = static_cast<database_sqlite *>(sqlite3_user_data(context));
     sqlite3_result_int(context, self->is_ignored(path) ? 1 : 0);
 }
 } // namespace apptime
