@@ -1,26 +1,27 @@
 #include "process.hpp"
 
-#include <signal.h>
+#include <csignal>
+#include <fstream>
+
 #include <proc/readproc.h>
 
 using namespace std::chrono;
 
 constexpr std::time_t invalid_time = static_cast<std::time_t>(-1);
 
-// TODO: X11 support for window_name, active_windows & focused_window
+// TODO: X11/Wayland support for window_name, active_windows & focused_window?
 
 std::time_t system_boot_time() {
-    FILE *fp = fopen("/proc/uptime", "r");
+    std::ifstream fp{"/proc/uptime"};
     if (!fp) {
         return invalid_time;
     }
 
-    double uptime;
-    if (fscanf(fp, "%lf", &uptime) != 1) {
-        fclose(fp);
+    double uptime = 0;
+    fp >> uptime;
+    if (!fp) {
         return invalid_time;
     }
-    fclose(fp);
 
     std::time_t now = time(nullptr);
     return now - static_cast<std::time_t>(uptime);
@@ -40,24 +41,23 @@ std::string process::window_name() const {
 }
 
 std::string process::full_path() const {
-    char        result[PATH_MAX];
-    std::string path = std::format("/proc/{:d}/exe", process_id_);
+    std::array<char, PATH_MAX> array = {};
+    std::string                path  = std::format("/proc/{:d}/exe", process_id_);
 
     // read the symbolic link
-    ssize_t len = readlink(path.data(), result, sizeof(result) - 1);
+    ssize_t len = readlink(path.data(), array.data(), array.size() - 1);
     if (len != -1) {
-        result[len] = '\0';
-        return {result};
+        return {array.data(), static_cast<std::size_t>(len)};
     }
     return {};
 }
 
 system_clock::time_point process::start() const {
-    pid_t                    pid_list[] = {process_id_, 0};
-    proc_t                   proc_info  = {};
+    std::array               pid_list{process_id_, 0};
+    proc_t                   proc_info = {};
     system_clock::time_point result;
 
-    PROCTAB *proc = openproc(PROC_PID | PROC_FILLSTAT, &pid_list);
+    PROCTAB *proc = openproc(PROC_PID | PROC_FILLSTAT, pid_list.data());
     while (readproc(proc, &proc_info)) {
         if (proc_info.tid == process_id_) {
             const auto start = static_cast<std::time_t>(proc_info.start_time / sysconf(_SC_CLK_TCK)) + system_boot_time();
@@ -80,14 +80,14 @@ std::vector<process> process::active_processes() {
     while (readproc(proc, &proc_info)) {
         process p{proc_info.tid};
         if (p.exist()) {
-            result.push_back(p);
+            result.emplace_back(p);
         }
     }
     closeproc(proc);
     return result;
 }
 
-std::vector<process> process::active_windows(bool only_visible) {
+std::vector<process> process::active_windows(bool /*only_visible*/) {
     return active_processes();
 }
 

@@ -11,7 +11,7 @@ class ignore_window : public QWidget {
     Q_OBJECT
 
 public:
-    ignore_window(QWidget *parent = nullptr);
+    explicit ignore_window(QWidget *parent = nullptr);
 
     void update(const std::vector<ignore> &list);
 

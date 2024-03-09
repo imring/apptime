@@ -14,9 +14,9 @@ Checks: >
   llvm-*,
   -cppcoreguidelines-owning-memory,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
-  -cppcoreguidelines-avoid-c-arrays,
   -cppcoreguidelines-special-member-functions,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-vararg,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
   -modernize-use-nodiscard,
@@ -24,7 +24,8 @@ Checks: >
   -readability-implicit-bool-conversion,
   -readability-isolate-declaration,
   -misc-include-cleaner,
-  -google-build-using-namespace
+  -google-build-using-namespace,
+  -google-readability-todo
 
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

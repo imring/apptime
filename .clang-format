@@ -8,7 +8,7 @@ AlwaysBreakTemplateDeclarations: Yes
 SpaceBeforeRangeBasedForLoopColon: false
 UseTab: Never
 SortIncludes: Never
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
 IndentWrappedFunctionNames: false
 AlwaysBreakAfterDefinitionReturnType: None
 ColumnLimit: 160
@@ -17,3 +17,4 @@ IndentRequires: true
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 QualifierAlignment: Left
+PackConstructorInitializers: CurrentLine

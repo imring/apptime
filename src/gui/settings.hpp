@@ -1,8 +1,8 @@
 #ifndef APPTIME_GUI_SETTINGS_HPP
 #define APPTIME_GUI_SETTINGS_HPP
 
-#include <QSpinBox>
 #include <QListWidget>
+#include <QSpinBox>
 #include <QStackedWidget>
 #include <QWidget>
 
@@ -11,7 +11,7 @@ class settings_window : public QWidget {
     Q_OBJECT
 
 public:
-    settings_window(QWidget *parent = nullptr);
+    explicit settings_window(QWidget *parent = nullptr);
 
     void readSettings();
     void saveSettings();

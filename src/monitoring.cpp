@@ -47,7 +47,10 @@ apptime::record build_record(const apptime::process &proc, bool focused = false)
 
 namespace apptime {
 monitoring::monitoring(std::shared_ptr<database> db)
-    : db_{std::move(db)}, active_delay{default_active_delay}, focus_delay{default_focus_delay}, running_{false} {}
+    : db_{std::move(db)},
+      active_delay{default_active_delay},
+      focus_delay{default_focus_delay},
+      running_{false} {}
 
 monitoring::~monitoring() {
     stop();

@@ -26,7 +26,7 @@ public:
         bool icons;
     };
 
-    table_records(QWidget *parent = nullptr);
+    explicit table_records(QWidget *parent = nullptr);
 
     void update(const std::vector<record> &apps, const settings &set = {});
 

@@ -1,9 +1,9 @@
 #ifndef APPTIME_GUI_WINDOW_HPP
 #define APPTIME_GUI_WINDOW_HPP
 
-#include <QDateEdit>
-#include <QComboBox>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDateEdit>
 #include <QMainWindow>
 
 #include "../monitoring.hpp"
@@ -20,9 +20,7 @@ public:
     void closeEvent(QCloseEvent *event) override;
 
     void toggle();
-    bool running() const {
-        return monitor_.running();
-    }
+    bool running() const { return monitor_.running(); }
 
 private slots:
     void updateFormat(int index);

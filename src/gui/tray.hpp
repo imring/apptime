@@ -7,7 +7,7 @@ namespace apptime {
 class tray : public QSystemTrayIcon {
     Q_OBJECT
 public:
-    tray(QObject *parent = nullptr);
+    explicit tray(QObject *parent = nullptr);
 
 private:
     QMenu *menu_;
