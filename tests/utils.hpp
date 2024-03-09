@@ -5,7 +5,7 @@
 #include <type_traits>
 
 template <typename T>
-    requires(std::is_integral_v<T> || std::is_floating_point_v<T>)
+    requires(std::is_arithmetic_v<T>)
 T random(T min, T max) {
     static std::random_device rd;
     static std::mt19937       gen{rd()};
@@ -19,7 +19,7 @@ T random(T min, T max) {
     }
 }
 
-std::string random_string(int size) {
+inline std::string random_string(int size) {
     constexpr std::string_view alphanum = "0123456789"
                                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                           "abcdefghijklmnopqrstuvwxyz";

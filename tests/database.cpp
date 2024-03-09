@@ -1,8 +1,9 @@
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 
-#include <sqlite3.h>
 #include <SQLiteCpp/SQLiteCpp.h>
+#include <sqlite3.h>
 
 #include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -35,30 +36,40 @@ std::vector<apptime::record> random_processes(int size) {
     std::vector<apptime::record> result;
     result.resize(size);
     for (auto it = result.begin(); it != result.end(); it++) {
-        auto &v = *it;
+        auto &val = *it;
 
         // random path generating (e.g. /foo/bar)
-        do {
-            int subfolders = 2; // 1 subfolders + 1 file
-            while (subfolders--) {
-                v.path += "/" + random_string(random(1, 10));
-            }
-        } while (!path_is_unique(v.path, result.begin(), it));
+        constexpr int name_len = 10;
+        for (int subfolders = 2; subfolders > 0 || !path_is_unique(val.path, result.begin(), it); subfolders--) {
+            // subfolders = 2 means 1 subfolder + 1 file
+            val.path += "/" + random_string(random(1, name_len));
+        }
 
         // random name generating
-        v.name = random_string(random(1, 10));
+        val.name = random_string(random(1, name_len));
 
         // random time generating
-        std::tm date = {};
-        date.tm_year = random(2021, 2023) - 1900; // years since 1900
-        date.tm_mon  = random(0, 11);             // months are zero-based
-        date.tm_mday = random(1, 28);
-        date.tm_hour = 12;
+        constexpr int min_year    = 2021;
+        constexpr int max_year    = 2023;
+        constexpr int year_offset = 1900; // years since 1900 (see https://en.cppreference.com/w/cpp/chrono/c/tm)
 
-        const seconds                  diff{static_cast<seconds::rep>(random(0, 3 * 60 * 60))}; // from 0 seconds to 3 hours in seconds
+        constexpr int max_month = 11;
+        constexpr int max_day   = 28; // 28 because of February
+        constexpr int hour      = 12;
+
+        std::tm date = {};
+        date.tm_year = random(min_year, max_year) - year_offset;
+        date.tm_mon  = random(0, max_month); // months are zero-based
+        date.tm_mday = random(1, max_day);
+        date.tm_hour = hour;
+
+        // add the difference in seconds to the start
+        constexpr int max_seconds = 3 * 60 * 60;
+
+        const seconds                  diff{static_cast<seconds::rep>(random(0, max_seconds))};
         const system_clock::time_point end = system_clock::from_time_t(std::mktime(&date));
         const system_clock::time_point start{end.time_since_epoch() - diff};
-        v.times.emplace_back(start, end);
+        val.times.emplace_back(start, end);
     }
     return result;
 }
@@ -104,8 +115,8 @@ TEST_CASE("element search") {
     apptime::database db{test_paths.ele_search};
 
     SECTION("add all elements") {
-        for (const auto &v: processes) {
-            REQUIRE(db.add_active(v));
+        for (const auto &val: processes) {
+            REQUIRE(db.add_active(val));
         }
         REQUIRE(db.actives().size() == processes.size());
     }
@@ -113,20 +124,18 @@ TEST_CASE("element search") {
     SECTION("search by year") {
         const auto &test_time = processes.front().times.front().first;
         const auto  ymd       = year_month_day{floor<days>(test_time)};
-        const auto  y         = ymd.year();
+        const auto  year      = ymd.year();
 
-        const std::ptrdiff_t assumed = std::count_if(processes.begin(), processes.end(), [y](const apptime::record &ele) {
-            for (const auto &[start, end]: ele.times) {
-                const auto y_start = year_month_day{floor<days>(start)}, y_end = year_month_day{floor<days>(end)};
-                if (y_start.year() == y || y_end.year() == y) {
-                    return true;
-                }
-            }
-            return false;
+        const std::ptrdiff_t assumed = std::ranges::count_if(processes, [year](const apptime::record &ele) {
+            return std::ranges::any_of(ele.times, [year](const auto &time) {
+                const year_month_day start{floor<days>(time.first)};
+                const year_month_day end{floor<days>(time.second)};
+                return start.year() == year || end.year() == year;
+            });
         });
 
         apptime::database::options opt;
-        opt.date = y;
+        opt.date = year;
         REQUIRE(db.actives(opt).size() == assumed);
     }
 
@@ -135,15 +144,15 @@ TEST_CASE("element search") {
         const auto  ymd       = year_month_day{floor<days>(test_time)};
         const auto  ym        = ymd.year() / ymd.month();
 
-        const std::ptrdiff_t assumed = std::count_if(processes.begin(), processes.end(), [ym](const apptime::record &ele) {
-            for (const auto &[start, end]: ele.times) {
-                const auto ymd_start = year_month_day{floor<days>(start)}, ymd_end = year_month_day{floor<days>(end)};
-                const auto ym_start = ymd_start.year() / ymd_start.month(), ym_end = ymd_end.year() / ymd_end.month();
-                if (ym_start == ym || ym_end == ym) {
-                    return true;
-                }
-            }
-            return false;
+        const std::ptrdiff_t assumed = std::ranges::count_if(processes, [ym](const apptime::record &ele) {
+            return std::ranges::any_of(ele.times, [ym](const auto &time) {
+                const year_month_day start{floor<days>(time.first)};
+                const year_month_day end{floor<days>(time.second)};
+
+                const auto ym_start = start.year() / start.month();
+                const auto ym_end   = end.year() / end.month();
+                return ym_start == ym || ym_end == ym;
+            });
         });
 
         apptime::database::options opt;
@@ -155,14 +164,12 @@ TEST_CASE("element search") {
         const auto &test_time = (processes.begin() + 2)->times.front().first;
         const auto  ymd       = year_month_day{floor<days>(test_time)};
 
-        const std::ptrdiff_t assumed = std::count_if(processes.begin(), processes.end(), [ymd](const apptime::record &ele) {
-            for (const auto &[start, end]: ele.times) {
-                const auto ymd_start = year_month_day{floor<days>(start)}, ymd_end = year_month_day{floor<days>(end)};
-                if (ymd_start == ymd || ymd_end == ymd) {
-                    return true;
-                }
-            }
-            return false;
+        const std::ptrdiff_t assumed = std::ranges::count_if(processes, [ymd](const apptime::record &ele) {
+            return std::ranges::any_of(ele.times, [ymd](const auto &time) {
+                const year_month_day start{floor<days>(time.first)};
+                const year_month_day end{floor<days>(time.second)};
+                return start == ymd || end == ymd;
+            });
         });
 
         apptime::database::options opt;
@@ -185,6 +192,7 @@ TEST_CASE("cleanup") {
 }
 
 int main(int argc, char *argv[]) {
-    processes = random_processes(15); // generate 15 random "processes" to test the class
+    constexpr int max_processes = 15;
+    processes                   = random_processes(max_processes); // generate random "processes" to test the class
     return Catch::Session().run(argc, argv);
 }
