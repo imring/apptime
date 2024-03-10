@@ -2,6 +2,7 @@
 #define APPTIME_DATABASE_HPP
 
 #include <chrono>
+#include <variant>
 
 #include <SQLiteCpp/SQLiteCpp.h>
 

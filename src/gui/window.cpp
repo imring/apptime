@@ -12,10 +12,14 @@
 #include <QVBoxLayout>
 
 #include "database/database_sqlite.hpp"
-#include "ignore.hpp"
+#include "gui/ignore.hpp"
+#include "process/process_system.hpp"
 
 namespace apptime {
-window::window(QWidget *parent) : QMainWindow{parent}, db_{std::make_shared<database_sqlite>("./result.db")}, monitor_{db_} {
+window::window(QWidget *parent)
+    : QMainWindow{parent},
+      db_{std::make_shared<database_sqlite>("./result.db")},
+      monitor_{db_, std::make_unique<process_system_mgr>()} {
     const QIcon icon{":/icon.png"};
     setWindowIcon(icon);
 

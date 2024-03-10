@@ -1,8 +1,6 @@
 #include "records.hpp"
 
-#include <algorithm>
 #include <format>
-#include <ranges>
 #include <set>
 
 #include <QClipboard>
@@ -13,6 +11,8 @@
 
 #include "platforms/icon.hpp"
 
+using apptime::table_records;
+
 std::string application_name(const apptime::record &app, bool window_names = false) {
     if (window_names && !app.name.empty()) {
         return app.name;
@@ -21,7 +21,7 @@ std::string application_name(const apptime::record &app, bool window_names = fal
     return path.filename().string();
 }
 
-apptime::table_records::app_duration_t total_duration(const apptime::record &app) {
+table_records::app_duration_t total_duration(const apptime::record &app) {
     using namespace std::chrono;
 
     system_clock::duration result{};
@@ -33,19 +33,19 @@ apptime::table_records::app_duration_t total_duration(const apptime::record &app
 
 auto convert_actives(const std::vector<apptime::record> &apps, bool window_names = false) {
     // std::set is needed here for sorting applications
-    const auto comp = [](const apptime::table_records::table_info &left, const apptime::table_records::table_info &right) {
+    const auto comp = [](const table_records::table_info &left, const table_records::table_info &right) {
         return left.duration.to_duration() > right.duration.to_duration();
     };
-    std::set<apptime::table_records::table_info, decltype(comp)> result{comp};
+    std::set<table_records::table_info, decltype(comp)> result{comp};
 
     for (const auto &app: apps) {
         result.emplace(app.path, application_name(app, window_names), total_duration(app));
     }
-    return std::vector<apptime::table_records::table_info>{result.begin(), result.end()};
+    return std::vector<table_records::table_info>{result.begin(), result.end()};
 }
 
 // format the duration to 999h 59m 59s
-std::string duration_format(const apptime::table_records::app_duration_t &duration) {
+std::string duration_format(const table_records::app_duration_t &duration) {
     std::string result;
 
     const auto hours   = duration.hours().count();

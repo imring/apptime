@@ -7,11 +7,12 @@
 #include <mutex>
 
 #include "database/database.hpp"
+#include "process/process.hpp"
 
 namespace apptime {
 class monitoring {
 public:
-    explicit monitoring(std::shared_ptr<database> db);
+    monitoring(std::shared_ptr<database> db, std::unique_ptr<process_mgr> manager);
     ~monitoring();
 
     void start();
@@ -28,10 +29,11 @@ private:
     std::thread active_thread_;
     std::thread focus_thread_;
 
-    std::shared_ptr<database> db_;
-    std::mutex                mutex_;
-    std::atomic_bool          running_;
+    std::shared_ptr<database>    db_;
+    std::unique_ptr<process_mgr> manager_;
 
+    std::mutex              mutex_;
+    std::atomic_bool        running_;
     std::condition_variable cv;
 };
 } // namespace apptime

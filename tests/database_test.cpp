@@ -1,3 +1,5 @@
+// NOLINTBEGIN(readability-function-cognitive-complexity, misc-use-anonymous-namespace, cppcoreguidelines-avoid-do-while)
+
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -196,3 +198,5 @@ int main(int argc, char *argv[]) {
     processes                   = random_processes(max_processes); // generate random "processes" to test the class
     return Catch::Session().run(argc, argv);
 }
+
+// NOLINTEND(readability-function-cognitive-complexity, misc-use-anonymous-namespace, cppcoreguidelines-avoid-do-while)

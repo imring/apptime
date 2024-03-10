@@ -1,6 +1,7 @@
 #ifndef TESTS_UTILS_HPP
 #define TESTS_UTILS_HPP
 
+#include <chrono>
 #include <random>
 #include <type_traits>
 
@@ -31,5 +32,16 @@ inline std::string random_string(int size) {
     }
     return result;
 }
+
+class timer {
+public:
+    using time_point = std::chrono::system_clock::time_point;
+
+    explicit timer(time_point::duration duration) : start_{std::chrono::system_clock::now()}, end_{start_ + duration} {}
+    bool expired() const { return std::chrono::system_clock::now() >= end_; }
+
+private:
+    time_point start_, end_;
+};
 
 #endif // TESTS_UTILS_HPP

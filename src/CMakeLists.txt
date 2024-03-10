@@ -9,8 +9,30 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SQLiteCpp)
 
+# process
+add_library(apptime-process)
+target_compile_features(apptime-process PUBLIC cxx_std_20)
+target_include_directories(apptime-process PUBLIC .)
+
+# database
+add_library(apptime-database database/database_sqlite.cpp)
+target_compile_features(apptime-database PUBLIC cxx_std_20)
+target_include_directories(apptime-database PUBLIC .)
+target_link_libraries(apptime-database PUBLIC
+    SQLiteCpp
+    SQLite::SQLite3
+)
+
+# monitoring
+add_library(apptime-monitoring monitoring.cpp)
+target_compile_features(apptime-monitoring PUBLIC cxx_std_20)
+target_include_directories(apptime-monitoring PUBLIC .)
+target_link_libraries(apptime-monitoring PUBLIC apptime-process apptime-database)
+
+# apptime
 add_executable(apptime
     database/database_sqlite.cpp
+
     gui/widgets/records.cpp
     gui/ignore.cpp
     gui/settings.cpp
@@ -18,23 +40,25 @@ add_executable(apptime
     gui/window.cpp
 
     main.cpp
-    monitoring.cpp
 )
 
 if(WIN32)
-    target_sources(apptime PRIVATE platforms/encoding_win32.cpp)
-    target_sources(apptime PRIVATE platforms/icon_win32.cpp)
-    target_sources(apptime PRIVATE platforms/process_win32.cpp)
+    target_sources(apptime-process PRIVATE process/process_system_win32.cpp)
+
+    target_sources(apptime PRIVATE
+        platforms/encoding_win32.cpp
+        platforms/icon_win32.cpp
+    )
 elseif(UNIX)
+    target_sources(apptime-process PRIVATE process/process_system_unix.cpp)
+
     target_link_libraries(apptime PRIVATE PkgConfig::PROCPS)
     target_sources(apptime PRIVATE platforms/icon_unix.cpp)
-    target_sources(apptime PRIVATE platforms/process_unix.cpp)
 endif()
 
 target_include_directories(apptime PRIVATE .)
 target_link_libraries(apptime PRIVATE
-    SQLiteCpp
-    SQLite::SQLite3
+    apptime-monitoring
 
     Qt${QT_VERSION}::Widgets
 )

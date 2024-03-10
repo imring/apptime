@@ -58,7 +58,7 @@ std::string select_records::logs_start() const {
 
 std::string select_records::logs_end() const {
     if (opts_.date.index() == 0) { // std::monostate
-        return "logs.start";
+        return "logs.end";
     }
     return "CASE WHEN strftime(:date_format, logs.end) = :date_value THEN logs.end "
            "ELSE strftime('%Y-%m-%d %H:%M:%S', logs.end, :date_start, '-1 second') END AS 'end'";

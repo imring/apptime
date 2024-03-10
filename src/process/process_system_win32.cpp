@@ -1,12 +1,13 @@
-#include "process.hpp"
+#include "process_system.hpp"
 
+#include <array>
 #include <functional>
 
 #include <Windows.h>
 #include <psapi.h>
 #include <tlhelp32.h>
 
-#include "encoding.hpp"
+#include "platforms/encoding.hpp"
 
 class handle_deleter {
 public:
@@ -61,13 +62,13 @@ std::vector<HWND> get_hwnds(int pid) {
 }
 
 namespace apptime {
-bool process::exist() const {
+bool process_system::exist() const {
     HANDLE               handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
     const handle_deleter hd{handle};
     return handle != nullptr;
 }
 
-std::string process::window_name() const {
+std::string process_system::window_name() const {
     const std::vector<HWND> hwnds = get_hwnds(process_id_);
     if (hwnds.empty()) {
         return {};
@@ -92,21 +93,21 @@ std::string process::window_name() const {
     return {};
 }
 
-std::string process::full_path() const {
+std::string process_system::full_path() const {
     HANDLE               handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id_);
     const handle_deleter hd{handle};
     if (handle == nullptr) {
         return {};
     }
 
-    TCHAR path[MAX_PATH] = {};
-    if (GetModuleFileNameEx(handle, nullptr, path, MAX_PATH) != 0) {
-        return utf8_encode(path);
+    std::array<TCHAR, MAX_PATH> path = {};
+    if (GetModuleFileNameEx(handle, nullptr, path.data(), path.size()) != 0) {
+        return utf8_encode(path.data());
     }
     return {};
 }
 
-std::chrono::system_clock::time_point process::start() const {
+std::chrono::system_clock::time_point process_system::start() const {
     HANDLE               handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, process_id_);
     const handle_deleter hd{handle};
     if (handle == nullptr) {
@@ -120,38 +121,42 @@ std::chrono::system_clock::time_point process::start() const {
     return filetime_to_chrono(creation);
 }
 
+std::chrono::system_clock::time_point process_system::focused_start() const {
+    return focused_start_;
+}
+
 // static
 
-std::vector<process> process::active_processes() {
+std::vector<process_system_mgr::process_type> process_system_mgr::active_processes() {
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
         return {};
     }
-    const handle_deleter hd{snapshot};
-    std::vector<process> result;
+    const handle_deleter      hd{snapshot};
+    std::vector<process_type> result;
 
     PROCESSENTRY32 entry = {};
     entry.dwSize         = sizeof(PROCESSENTRY32);
     for (BOOL found = Process32First(snapshot, &entry); found; found = Process32Next(snapshot, &entry)) {
-        const process proc{static_cast<int>(entry.th32ProcessID)};
+        const process_system proc{static_cast<int>(entry.th32ProcessID)};
         if (proc.exist()) {
-            result.push_back(proc);
+            result.emplace_back(std::make_unique<process_system>(proc));
         }
     }
 
     return result;
 }
 
-std::vector<process> process::active_windows(bool only_visible) {
-    std::vector<process> result;
-    const enum_windows_t callback = [&result, only_visible](HWND hwnd) -> BOOL {
+std::vector<process_system_mgr::process_type> process_system_mgr::active_windows(bool only_visible) {
+    std::vector<process_type> result;
+    const enum_windows_t      callback = [&result, only_visible](HWND hwnd) -> BOOL {
         if (only_visible && !IsWindowVisible(hwnd)) {
             return TRUE;
         }
 
         const int process_id = get_pid(hwnd);
         if (process_id != -1) {
-            result.emplace_back(process_id);
+            result.push_back(std::make_unique<process_system>(process_id));
         }
         return TRUE;
     };
@@ -159,18 +164,18 @@ std::vector<process> process::active_windows(bool only_visible) {
     return result;
 }
 
-process process::focused_window() {
+process_system_mgr::process_type process_system_mgr::focused_window() {
     HWND hwnd = GetForegroundWindow();
     if (!hwnd) {
-        return process{-1};
+        return std::make_unique<process_system>(-1);
     }
 
-    static process last_focused{-1};
-    const int      pid = get_pid(hwnd);
+    static process_system last_focused{-1};
+    const int             pid = get_pid(hwnd);
     if (pid != last_focused.process_id_) {
-        last_focused                = process{pid};
+        last_focused                = process_system{pid};
         last_focused.focused_start_ = std::chrono::system_clock::now();
     }
-    return last_focused;
+    return std::make_unique<process_system>(last_focused);
 }
 } // namespace apptime
