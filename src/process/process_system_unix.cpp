@@ -1,8 +1,9 @@
-#include "process.hpp"
+#include "process/process_system.hpp"
 
-#include <csignal>
 #include <fstream>
+#include <memory>
 
+#include <signal.h> // NOLINT
 #include <proc/readproc.h>
 
 using namespace std::chrono;
@@ -28,7 +29,7 @@ std::time_t system_boot_time() {
 }
 
 namespace apptime {
-bool process::exist() const {
+bool process_system::exist() const {
     if (process_id_ == -1) {
         return false;
     }
@@ -36,11 +37,11 @@ bool process::exist() const {
     return kill(process_id_, 0) == 0;
 }
 
-std::string process::window_name() const {
+std::string process_system::window_name() const {
     return {};
 }
 
-std::string process::full_path() const {
+std::string process_system::full_path() const {
     std::array<char, PATH_MAX> array = {};
     std::string                path  = std::format("/proc/{:d}/exe", process_id_);
 
@@ -52,7 +53,7 @@ std::string process::full_path() const {
     return {};
 }
 
-system_clock::time_point process::start() const {
+system_clock::time_point process_system::start() const {
     std::array               pid_list{process_id_, 0};
     proc_t                   proc_info = {};
     system_clock::time_point result;
@@ -70,28 +71,32 @@ system_clock::time_point process::start() const {
     return result;
 }
 
-// static
+std::chrono::system_clock::time_point process_system::focused_start() const {
+    return start();
+}
 
-std::vector<process> process::active_processes() {
-    proc_t               proc_info = {};
-    std::vector<process> result;
+// process_system_mgr
 
-    PROCTAB *proc = openproc(PROC_FILLSTAT);
-    while (readproc(proc, &proc_info)) {
-        process p{proc_info.tid};
-        if (p.exist()) {
-            result.emplace_back(p);
+std::vector<process_mgr::process_type> process_system_mgr::active_processes() {
+    proc_t                    proc_info = {};
+    std::vector<process_type> result;
+
+    PROCTAB *proctab = openproc(PROC_FILLSTAT);
+    while (readproc(proctab, &proc_info)) {
+        process_system proc{proc_info.tid};
+        if (proc.exist()) {
+            result.emplace_back(std::make_unique<process_system>(proc));
         }
     }
-    closeproc(proc);
+    closeproc(proctab);
     return result;
 }
 
-std::vector<process> process::active_windows(bool /*only_visible*/) {
+std::vector<process_mgr::process_type> process_system_mgr::active_windows(bool /*only_visible*/) {
     return active_processes();
 }
 
-process process::focused_window() {
-    return process{-1};
+process_mgr::process_type process_system_mgr::focused_window() {
+    return std::make_unique<process_system>(-1);
 }
 } // namespace apptime

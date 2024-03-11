@@ -154,18 +154,6 @@ auto parse_time(const std::string &time_str) {
     return result;
 }
 
-// check if current is in the primary or child directory
-bool in_same_directory(const fs::path &current, const fs::path &directory) {
-    if (current.empty() || directory.empty()) {
-        return false;
-    }
-    if (current.root_name().compare(directory.root_name()) != 0) { // it's used in windows to compare disk names
-        return false;
-    }
-    const fs::path relative = current.lexically_relative(directory);
-    return !relative.empty() && relative.begin()->compare("..") != 0;
-}
-
 std::string ignore_to_string(apptime::ignore_type value) {
     // clang-format off
     static const std::unordered_map<apptime::ignore_type, std::string> ignores = {
@@ -376,26 +364,6 @@ bool database_sqlite::valid_application(const record &rec) {
     update.bind(1, rec.path);
     update.bind(2, rec.name);
     return update.exec() == 1;
-}
-
-bool database_sqlite::is_ignored(const fs::path &path) const {
-    for (const auto &[type, value]: ignores()) {
-        switch (type) {
-        case ignore_file:
-            if (!path.compare(value)) {
-                return true;
-            }
-            break;
-        case ignore_path:
-            if (in_same_directory(path, value)) {
-                return true;
-            }
-            break;
-        default:
-            break;
-        }
-    }
-    return false;
 }
 
 void database_sqlite::is_ignored_sqlite(sqlite3_context *context, int argc, sqlite3_value **argv) {

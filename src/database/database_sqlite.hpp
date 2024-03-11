@@ -93,20 +93,6 @@ private:
     bool valid_application(const record &rec);
 
     /**
-     * @brief Checks whether a given path is in the ignore list.
-     *
-     * This method examines whether the specified path is present in the list of ignored entries.
-     * It iterates through each entry in the ignore list, comparing the provided path against each entry.
-     * The path can be ignored based on two types:
-     *   - 'file': Exact match with the specified file path.
-     *   - 'path': Ignored if the specified path is within the same directory or its child paths as the entry in the ignore list.
-     *
-     * @param path The path to check for being ignored.
-     * @return true if the path is ignored, false otherwise.
-     */
-    bool is_ignored(const std::filesystem::path &path) const;
-
-    /**
      * @brief Fills the records vector based on the provided SQLite statement.
      *
      * @param stmt The SQLite statement to execute.

@@ -15,7 +15,10 @@ target_compile_features(apptime-process PUBLIC cxx_std_20)
 target_include_directories(apptime-process PUBLIC .)
 
 # database
-add_library(apptime-database database/database_sqlite.cpp)
+add_library(apptime-database
+    database/database.cpp
+    database/database_sqlite.cpp
+)
 target_compile_features(apptime-database PUBLIC cxx_std_20)
 target_include_directories(apptime-database PUBLIC .)
 target_link_libraries(apptime-database PUBLIC
@@ -51,8 +54,8 @@ if(WIN32)
     )
 elseif(UNIX)
     target_sources(apptime-process PRIVATE process/process_system_unix.cpp)
+    target_link_libraries(apptime-process PUBLIC PkgConfig::PROCPS)
 
-    target_link_libraries(apptime PRIVATE PkgConfig::PROCPS)
     target_sources(apptime PRIVATE platforms/icon_unix.cpp)
 endif()
 
