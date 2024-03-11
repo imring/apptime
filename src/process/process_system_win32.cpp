@@ -101,7 +101,7 @@ std::string process_system::full_path() const {
     }
 
     std::array<TCHAR, MAX_PATH> path = {};
-    if (GetModuleFileNameEx(handle, nullptr, path.data(), path.size()) != 0) {
+    if (GetModuleFileNameEx(handle, nullptr, path.data(), static_cast<DWORD>(path.size())) != 0) {
         return utf8_encode(path.data());
     }
     return {};

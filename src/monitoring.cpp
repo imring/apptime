@@ -78,28 +78,23 @@ void monitoring::stop() {
 }
 
 bool monitoring::running() const {
-    return running_ && active_thread_.joinable() && focus_thread_.joinable();
+    return running_;
 }
 
 void monitoring::active_thread() {
     for (;;) {
         // write active processes
-        {
-            std::unique_lock<std::mutex> lock{mutex_};
-            for (auto &proc: filtered_windows(manager_.get())) {
-                db_->add_active(build_record(std::move(proc)));
-            }
+        std::unique_lock<std::mutex> lock{mutex_};
+        for (auto &proc: filtered_windows(manager_.get())) {
+            db_->add_active(build_record(std::move(proc)));
         }
 
         // wait for next cycle
         // if monitoring is stopped, return
-        {
-            std::unique_lock<std::mutex> lock{mutex_};
-            if (cv.wait_for(lock, active_delay, [this] {
-                    return !running();
-                })) {
-                return;
-            }
+        if (cv.wait_for(lock, active_delay, [this] {
+                return !running();
+            })) {
+            return;
         }
     }
 }
@@ -107,20 +102,15 @@ void monitoring::active_thread() {
 void monitoring::focus_thread() {
     for (;;) {
         // write a focused process
-        {
-            std::unique_lock<std::mutex> lock{mutex_};
-            db_->add_focus(build_record(manager_->focused_window(), true));
-        }
+        std::unique_lock<std::mutex> lock{mutex_};
+        db_->add_focus(build_record(manager_->focused_window(), true));
 
         // wait for next cycle
         // if monitoring is stopped, return
-        {
-            std::unique_lock<std::mutex> lock{mutex_};
-            if (cv.wait_for(lock, focus_delay, [this] {
-                    return !running();
-                })) {
-                return;
-            }
+        if (cv.wait_for(lock, focus_delay, [this] {
+                return !running();
+            })) {
+            return;
         }
     }
 }

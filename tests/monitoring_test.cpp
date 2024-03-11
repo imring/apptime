@@ -103,7 +103,8 @@ TEST_CASE("monitoring") {
         const int   max_records = 2;
         const timer monitoring_timer{monitoring_delay * max_records};
         while ((database->actives({}).size() != max_records || database->focuses({}).size() != max_records) && !monitoring_timer.expired()) {
-            std::this_thread::sleep_for(monitoring_delay);
+            constexpr auto delay = 1ms;
+            std::this_thread::sleep_for(delay);
         }
 
         const std::vector<apptime::record> actives = database->actives({});
@@ -129,7 +130,8 @@ TEST_CASE("monitoring") {
         // wait for active & focus
         const timer monitoring_timer{monitoring_delay};
         while ((!database->actives({}).empty() || !database->focuses({}).empty()) && !monitoring_timer.expired()) {
-            std::this_thread::sleep_for(monitoring_delay);
+            constexpr auto delay = 1ms;
+            std::this_thread::sleep_for(delay);
         }
 
         const std::vector<apptime::record> actives = database->actives({});

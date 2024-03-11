@@ -4,22 +4,14 @@
 
 #include <sqlite3.h>
 
-namespace fs = std::filesystem;
-
 // a simple builder for database::active and database::focuses
 // the main purpose of the class is to provide customization of settings in sql query
 class select_records {
 public:
-    select_records(std::string_view table_name, const apptime::database::options &opts) : table_name_{table_name}, opts_{opts} {
-        update();
-    }
+    select_records(std::string_view table_name, const apptime::database::options &opts) : table_name_{table_name}, opts_{opts} { update(); }
 
-    std::string query() const {
-        return query_;
-    }
-    std::unordered_map<std::string, std::string> binds() const {
-        return binds_;
-    }
+    std::string                                  query() const { return query_; }
+    std::unordered_map<std::string, std::string> binds() const { return binds_; }
 
 private:
     // logs_start and logs_end are necessary for time alignment.
@@ -98,9 +90,7 @@ std::string select_records::where() {
             };
         }
 
-        date_info operator()(std::monostate /*unused*/) {
-            return {};
-        }
+        date_info operator()(std::monostate /*unused*/) { return {}; }
     };
 
     binds_.clear();

@@ -138,7 +138,7 @@ TEST_CASE("element search") {
 
         apptime::database::options opt;
         opt.date = year;
-        REQUIRE(db.actives(opt).size() == assumed);
+        REQUIRE(db.actives(opt).size() == static_cast<std::size_t>(assumed));
     }
 
     SECTION("search by year/month") {
@@ -159,7 +159,7 @@ TEST_CASE("element search") {
 
         apptime::database::options opt;
         opt.date = ym;
-        REQUIRE(db.actives(opt).size() == assumed);
+        REQUIRE(db.actives(opt).size() == static_cast<std::size_t>(assumed));
     }
 
     SECTION("search by year/month/day") {
@@ -176,7 +176,7 @@ TEST_CASE("element search") {
 
         apptime::database::options opt;
         opt.date = ymd;
-        REQUIRE(db.actives(opt).size() == assumed);
+        REQUIRE(db.actives(opt).size() == static_cast<std::size_t>(assumed));
     }
 
     SECTION("search by path") {

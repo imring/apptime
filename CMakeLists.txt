@@ -14,6 +14,14 @@ if(UNIX)
     pkg_check_modules(PROCPS REQUIRED IMPORTED_TARGET libprocps)
 endif()
 
+if (MSVC)
+    # warning level 4
+    add_compile_options(/W4)
+else()
+    # additional warnings
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
 add_subdirectory(src)
 
 if (APPTIME_TEST)

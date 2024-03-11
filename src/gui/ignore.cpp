@@ -51,7 +51,7 @@ void ignore_window::update(const std::vector<ignore> &list) {
     table_widget_->clearContents();
 
     table_widget_->setRowCount(static_cast<int>(list.size()));
-    for (int i = 0; i < list.size(); i++) {
+    for (int i = 0; i < static_cast<int>(list.size()); i++) {
         const auto &element = list[i];
 
         auto *type = new QTableWidgetItem{QString::fromStdString(element.first == ignore_file ? "File" : "Path")};
@@ -82,7 +82,7 @@ void ignore_window::removeSelected() {
         return;
     }
     const QModelIndexList rows = select->selectedRows();
-    if (rows.empty() || rows.size() > list_.size()) {
+    if (rows.empty() || rows.size() > static_cast<int>(list_.size())) {
         return;
     }
 

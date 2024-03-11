@@ -82,7 +82,7 @@ void table_records::update(const std::vector<record> &apps, const settings &set)
 
     list_ = convert_actives(apps, set.window_names);
     setRowCount(static_cast<int>(list_.size()));
-    for (int i = 0; i < list_.size(); i++) {
+    for (int i = 0; i < static_cast<int>(list_.size()); i++) {
         const auto &element = list_[i];
 
         auto *name = new QTableWidgetItem{QString::fromStdString(element.name)};
